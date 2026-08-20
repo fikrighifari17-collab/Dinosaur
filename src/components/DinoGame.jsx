@@ -426,17 +426,23 @@ function drawRoundRect(ctx, x, y, w, h, radii = 0) {
 // ANALOG JOYSTICK COMPONENT UNTUK PENGGUNA MOBILE (POJOK KIRI BAWAH)
 function TouchAnalog({ keysRef }) {
   const baseRef = useRef(null);
-  const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
-  const [activeDirs, setActiveDirs] = useState({ up: false, down: false, left: false, right: false });
+  const knobRef = useRef(null);
+  const touchIdRef = useRef(null);
   const isDraggingRef = useRef(false);
+  const [activeDirs, setActiveDirs] = useState({ up: false, down: false, left: false, right: false });
+  const activeDirsRef = useRef({ up: false, down: false, left: false, right: false });
 
   const resetStick = useCallback(() => {
     isDraggingRef.current = false;
-    setKnobPos({ x: 0, y: 0 });
+    touchIdRef.current = null;
+    if (knobRef.current) {
+      knobRef.current.style.transform = "translate(0px, 0px)";
+    }
     keysRef.current.up = false;
     keysRef.current.down = false;
     keysRef.current.left = false;
     keysRef.current.right = false;
+    activeDirsRef.current = { up: false, down: false, left: false, right: false };
     setActiveDirs({ up: false, down: false, left: false, right: false });
   }, [keysRef]);
 
@@ -449,8 +455,8 @@ function TouchAnalog({ keysRef }) {
     const dx = clientX - centerX;
     const dy = clientY - centerY;
 
-    const maxRadius = 40;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const maxRadius = 45;
+    const dist = Math.hypot(dx, dy);
 
     let clampedX = dx;
     let clampedY = dy;
@@ -458,26 +464,25 @@ function TouchAnalog({ keysRef }) {
       clampedX = (dx / dist) * maxRadius;
       clampedY = (dy / dist) * maxRadius;
     }
-    setKnobPos({ x: clampedX, y: clampedY });
 
-    const deadzone = 16;
+    if (knobRef.current) {
+      knobRef.current.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
+    }
+
+    const deadzone = 10;
     let isUp = false;
     let isDown = false;
     let isLeft = false;
     let isRight = false;
 
     if (dist >= deadzone) {
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const normX = dx / (dist || 1);
+      const normY = dy / (dist || 1);
 
-      if (angle >= -135 && angle <= -45) {
-        isUp = true;
-      } else if (angle >= 45 && angle <= 135) {
-        isDown = true;
-      } else if (angle > 135 || angle < -135) {
-        isLeft = true;
-      } else if (angle > -45 && angle < 45) {
-        isRight = true;
-      }
+      if (normY < -0.38) isUp = true;
+      if (normY > 0.38) isDown = true;
+      if (normX < -0.38) isLeft = true;
+      if (normX > 0.38) isRight = true;
     }
 
     keysRef.current.up = isUp;
@@ -485,53 +490,88 @@ function TouchAnalog({ keysRef }) {
     keysRef.current.left = isLeft;
     keysRef.current.right = isRight;
 
-    setActiveDirs({ up: isUp, down: isDown, left: isLeft, right: isRight });
+    const prev = activeDirsRef.current;
+    if (prev.up !== isUp || prev.down !== isDown || prev.left !== isLeft || prev.right !== isRight) {
+      const next = { up: isUp, down: isDown, left: isLeft, right: isRight };
+      activeDirsRef.current = next;
+      setActiveDirs(next);
+    }
   }, [keysRef]);
 
   useEffect(() => {
-    const handleGlobalUp = () => {
-      if (isDraggingRef.current) {
-        resetStick();
-      }
-    };
-    const handleGlobalMove = (e) => {
+    const handleMove = (e) => {
       if (!isDraggingRef.current) return;
-      let clientX = e.clientX;
-      let clientY = e.clientY;
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
+
+      let clientX, clientY;
+      if (e.touches) {
+        let matchedTouch = null;
+        for (let i = 0; i < e.touches.length; i++) {
+          if (e.touches[i].identifier === touchIdRef.current) {
+            matchedTouch = e.touches[i];
+            break;
+          }
+        }
+        if (matchedTouch) {
+          clientX = matchedTouch.clientX;
+          clientY = matchedTouch.clientY;
+        } else {
+          return;
+        }
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
       }
+
       if (clientX !== undefined && clientY !== undefined) {
         updateFromCoords(clientX, clientY);
       }
     };
 
-    window.addEventListener("pointerup", handleGlobalUp);
-    window.addEventListener("pointercancel", handleGlobalUp);
-    window.addEventListener("touchend", handleGlobalUp);
-    window.addEventListener("touchcancel", handleGlobalUp);
-    window.addEventListener("pointermove", handleGlobalMove);
-    window.addEventListener("touchmove", handleGlobalMove, { passive: false });
+    const handleEnd = (e) => {
+      if (!isDraggingRef.current) return;
+      if (e.changedTouches && touchIdRef.current !== null) {
+        let touchEnded = false;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === touchIdRef.current) {
+            touchEnded = true;
+            break;
+          }
+        }
+        if (!touchEnded) return;
+      }
+      resetStick();
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("touchmove", handleMove, { passive: false });
+    window.addEventListener("pointerup", handleEnd);
+    window.addEventListener("pointercancel", handleEnd);
+    window.addEventListener("touchend", handleEnd);
+    window.addEventListener("touchcancel", handleEnd);
 
     return () => {
-      window.removeEventListener("pointerup", handleGlobalUp);
-      window.removeEventListener("pointercancel", handleGlobalUp);
-      window.removeEventListener("touchend", handleGlobalUp);
-      window.removeEventListener("touchcancel", handleGlobalUp);
-      window.removeEventListener("pointermove", handleGlobalMove);
-      window.removeEventListener("touchmove", handleGlobalMove);
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("pointerup", handleEnd);
+      window.removeEventListener("pointercancel", handleEnd);
+      window.removeEventListener("touchend", handleEnd);
+      window.removeEventListener("touchcancel", handleEnd);
     };
   }, [resetStick, updateFromCoords]);
 
   const handleStart = (e) => {
-    isDraggingRef.current = true;
-    let clientX = e.clientX;
-    let clientY = e.clientY;
+    let clientX, clientY;
     if (e.touches && e.touches.length > 0) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
+      const touch = e.touches[e.touches.length - 1];
+      touchIdRef.current = touch.identifier;
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else {
+      touchIdRef.current = e.pointerId ?? "mouse";
+      clientX = e.clientX;
+      clientY = e.clientY;
     }
+    isDraggingRef.current = true;
     if (clientX !== undefined && clientY !== undefined) {
       updateFromCoords(clientX, clientY);
     }
@@ -549,12 +589,7 @@ function TouchAnalog({ keysRef }) {
         <div className={`analog-dir dir-down ${activeDirs.down ? "active" : ""}`}>▼</div>
         <div className={`analog-dir dir-left ${activeDirs.left ? "active" : ""}`}>◀</div>
         <div className={`analog-dir dir-right ${activeDirs.right ? "active" : ""}`}>▶</div>
-        <div
-          className="touch-analog-knob"
-          style={{
-            transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
-          }}
-        />
+        <div ref={knobRef} className="touch-analog-knob" />
       </div>
     </div>
   );
