@@ -55,3 +55,15 @@
     justify-content: center;
   }
 }
+
+:fullscreen, :-webkit-full-screen {
+  background-color: #0b0e23 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+

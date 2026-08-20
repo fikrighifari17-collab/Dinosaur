@@ -557,6 +557,8 @@ export default function DinoGame() {
   }, []);
 
   const requestLandscape = async () => {
+    const isMobile = window.innerWidth <= 900 || window.matchMedia("(pointer: coarse)").matches;
+    if (!isMobile) return;
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen().catch(() => {});
@@ -1347,6 +1349,9 @@ export default function DinoGame() {
           break;
         case "Space":
           e.preventDefault();
+          if (document.activeElement && typeof document.activeElement.blur === "function") {
+            document.activeElement.blur();
+          }
           if (!started || gameOver) startGame();
           break;
         default:
