@@ -378,6 +378,37 @@ const shuffle = (arr) => {
   return a;
 };
 
+function drawRoundRect(ctx, x, y, w, h, radii = 0) {
+  try {
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(x, y, w, h, radii);
+      return;
+    }
+  } catch (_) {}
+  ctx.beginPath();
+  let r = 0;
+  if (Array.isArray(radii)) {
+    r = radii[0] || 0;
+  } else if (typeof radii === "number") {
+    r = radii;
+  }
+  r = Math.min(r, w / 2, h / 2);
+  if (r <= 0) {
+    ctx.rect(x, y, w, h);
+    return;
+  }
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
 // ANALOG JOYSTICK COMPONENT UNTUK PENGGUNA MOBILE (POJOK KIRI BAWAH)
 function TouchAnalog({ keysRef }) {
   const baseRef = useRef(null);
@@ -1842,7 +1873,11 @@ export default function DinoGame() {
         }
       }
 
-      draw(ctx, s, now, isMoving);
+      try {
+        draw(ctx, s, now, isMoving);
+      } catch (err) {
+        console.error("Canvas draw error:", err);
+      }
       animId = requestAnimationFrame(loop);
     };
 
@@ -2288,7 +2323,7 @@ export default function DinoGame() {
 
     ctx.fillStyle = bodyColor;
     ctx.beginPath();
-    ctx.roundRect(x + w * 0.18, y + h * 0.25 + breathY, w * 0.52, h * 0.46, [12, 16, 12, 10]);
+    drawRoundRect(ctx, x + w * 0.18, y + h * 0.25 + breathY, w * 0.52, h * 0.46, [12, 16, 12, 10]);
     ctx.fill();
 
     ctx.fillStyle = bellyColor;
@@ -2331,11 +2366,11 @@ export default function DinoGame() {
     const jawOpen = isMoving ? Math.abs(Math.sin(now / 150)) * 4 : 0;
     ctx.fillStyle = bodyColor;
     ctx.beginPath();
-    ctx.roundRect(x + w * 0.42, y + h * 0.05 + breathY, w * 0.48, h * 0.32, [10, 14, 6, 8]);
+    drawRoundRect(ctx, x + w * 0.42, y + h * 0.05 + breathY, w * 0.48, h * 0.32, [10, 14, 6, 8]);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.roundRect(x + w * 0.75, y + h * 0.12 + breathY, w * 0.22, h * 0.2, [4, 8, 8, 4]);
+    drawRoundRect(ctx, x + w * 0.75, y + h * 0.12 + breathY, w * 0.22, h * 0.2, [4, 8, 8, 4]);
     ctx.fill();
 
     ctx.fillStyle = darkColor;
@@ -2437,7 +2472,7 @@ export default function DinoGame() {
       ctx.shadowColor = "#00E5FF";
       ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.roundRect(x + w * 0.58, y + h * 0.11 + breathY, w * 0.3, 8, 3);
+      drawRoundRect(ctx, x + w * 0.58, y + h * 0.11 + breathY, w * 0.3, 8, 3);
       ctx.fill();
       ctx.shadowBlur = 0;
     } else if (skin.hat === "flameHorns") {
@@ -2480,7 +2515,7 @@ export default function DinoGame() {
     const trunkX = x + w * 0.35;
     const trunkW = w * 0.3;
     ctx.beginPath();
-    ctx.roundRect(trunkX, y, trunkW, h, [8, 8, 3, 3]);
+    drawRoundRect(ctx, trunkX, y, trunkW, h, [8, 8, 3, 3]);
     ctx.fill();
 
     ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
