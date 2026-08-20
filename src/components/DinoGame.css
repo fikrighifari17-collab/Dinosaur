@@ -761,14 +761,79 @@
 /* TOMBOL AKSI MOBILE (POJOK KANAN BAWAH) */
 .mobile-action-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 14px;
+  right: 14px;
   z-index: 999;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
   align-items: flex-end;
+  gap: 8px;
   touch-action: none;
   user-select: none;
+}
+
+.mobile-skills-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mobile-skill-btn {
+  position: relative;
+  overflow: hidden;
+  padding: 5px 10px;
+  border-radius: 14px;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 10px;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s, opacity 0.15s;
+}
+
+.mobile-skill-btn:active {
+  transform: scale(0.92);
+}
+
+.mobile-skill-btn.rampage {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  border-color: #ffe082;
+}
+
+.mobile-skill-btn.slam {
+  background: linear-gradient(135deg, #e91e63, #c2185b);
+  border-color: #ff80ab;
+}
+
+.mobile-skill-btn.roar {
+  background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+  border-color: #ea80fc;
+}
+
+.mobile-skill-btn.disabled {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.mobile-cd-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+  transition: height 0.1s linear;
+}
+
+.mobile-main-actions-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
 }
 
 .mobile-action-btn {
@@ -793,20 +858,20 @@
 }
 
 .mobile-btn-jump {
-  width: 66px;
-  height: 66px;
-  font-size: 16px;
+  width: 62px;
+  height: 62px;
+  font-size: 15px;
   background: radial-gradient(circle at 35% 35%, #00e676, #009688);
-  box-shadow: 0 4px 20px rgba(0, 230, 118, 0.6);
+  box-shadow: 0 4px 18px rgba(0, 230, 118, 0.6);
   border-color: #a7ffeb;
 }
 
 .mobile-btn-duck {
-  width: 52px;
-  height: 52px;
-  font-size: 14px;
+  width: 50px;
+  height: 50px;
+  font-size: 13px;
   background: radial-gradient(circle at 35% 35%, #ff9100, #ff6d00);
-  box-shadow: 0 4px 15px rgba(255, 145, 0, 0.5);
+  box-shadow: 0 4px 14px rgba(255, 145, 0, 0.5);
   border-color: #ffe0b2;
 }
 
@@ -817,20 +882,27 @@
   margin-top: 1px;
 }
 
+@media (pointer: coarse), (max-width: 900px) {
+  /* HIDE FLOATING CANVAS SKILL BUTTONS ON MOBILE, AS THEY ARE IN MOBILE CONTROLS */
+  .skills-hud-btn-container {
+    display: none !important;
+  }
+}
+
 @media (max-width: 600px) {
   .dino-header-bar {
-    padding: 4px 6px;
-    gap: 4px;
+    padding: 3px 5px;
+    gap: 3px;
   }
   .hud-card {
-    padding: 2px 5px;
-    min-width: 34px;
+    padding: 1px 4px;
+    min-width: unset;
   }
   .hud-label {
-    font-size: 7.5px;
+    font-size: 7px;
   }
   .hud-val {
-    font-size: 9.5px;
+    font-size: 9px;
   }
   .skin-picker-compact {
     grid-template-columns: 1fr 1fr;
@@ -844,40 +916,84 @@
 }
 
 /* RESPONSIVE LANDSCAPE ON MOBILE DEVICES */
-@media (max-height: 500px) and (orientation: landscape) {
+@media (max-height: 550px) and (orientation: landscape) {
   .dino-game-wrapper {
-    margin: 2px auto;
+    margin: 0 auto;
+    gap: 2px;
+    max-height: 100vh;
+    justify-content: flex-start;
+  }
+
+  .dino-header-bar {
+    padding: 2px 6px;
+    border-radius: 6px;
+    box-shadow: none;
+    border-width: 1px;
+  }
+
+  .hud-card {
+    padding: 1px 3px;
+    border-radius: 4px;
+  }
+
+  .hud-label {
+    font-size: 6.5px;
+  }
+
+  .hud-val {
+    font-size: 8.5px;
+  }
+
+  .canvas-container {
+    border-radius: 8px;
+  }
+
+  .canvas-container canvas {
+    max-height: calc(100vh - 36px);
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    object-fit: contain;
+    display: block;
+  }
+
+  .touch-analog-container {
+    bottom: 8px;
+    left: 8px;
+  }
+
+  .touch-analog-base {
+    width: 86px;
+    height: 86px;
+  }
+
+  .touch-analog-knob {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mobile-action-container {
+    bottom: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+
+  .mobile-skills-row {
     gap: 4px;
   }
-  .dino-header-bar {
-    padding: 2px 8px;
+
+  .mobile-skill-btn {
+    padding: 3px 7px;
+    font-size: 8.5px;
   }
-  .hud-card {
-    padding: 1px 4px;
-  }
-  .touch-analog-container {
-    bottom: 10px;
-    left: 10px;
-  }
-  .touch-analog-base {
-    width: 90px;
-    height: 90px;
-  }
-  .touch-analog-knob {
-    width: 40px;
-    height: 40px;
-  }
-  .mobile-action-container {
-    bottom: 10px;
-    right: 10px;
-    gap: 8px;
-  }
+
   .mobile-btn-jump {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
   }
+
   .mobile-btn-duck {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
   }
 }

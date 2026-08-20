@@ -383,10 +383,28 @@ function TouchAnalog({ keysRef }) {
   const baseRef = useRef(null);
   const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
   const [activeDirs, setActiveDirs] = useState({ up: false, down: false, left: false, right: false });
-  const activePointerId = useRef(null);
+  const isDraggingRef = useRef(false);
 
-  const updateDirection = (dx, dy) => {
-    const maxRadius = 36;
+  const resetStick = useCallback(() => {
+    isDraggingRef.current = false;
+    setKnobPos({ x: 0, y: 0 });
+    keysRef.current.up = false;
+    keysRef.current.down = false;
+    keysRef.current.left = false;
+    keysRef.current.right = false;
+    setActiveDirs({ up: false, down: false, left: false, right: false });
+  }, [keysRef]);
+
+  const updateFromCoords = useCallback((clientX, clientY) => {
+    if (!baseRef.current) return;
+    const rect = baseRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const dx = clientX - centerX;
+    const dy = clientY - centerY;
+
+    const maxRadius = 40;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     let clampedX = dx;
@@ -397,11 +415,25 @@ function TouchAnalog({ keysRef }) {
     }
     setKnobPos({ x: clampedX, y: clampedY });
 
-    const deadzone = 8;
-    const isUp = dy < -deadzone;
-    const isDown = dy > deadzone;
-    const isLeft = dx < -deadzone;
-    const isRight = dx > deadzone;
+    const deadzone = 16;
+    let isUp = false;
+    let isDown = false;
+    let isLeft = false;
+    let isRight = false;
+
+    if (dist >= deadzone) {
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+      if (angle >= -135 && angle <= -45) {
+        isUp = true;
+      } else if (angle >= 45 && angle <= 135) {
+        isDown = true;
+      } else if (angle > 135 || angle < -135) {
+        isLeft = true;
+      } else if (angle > -45 && angle < 45) {
+        isRight = true;
+      }
+    }
 
     keysRef.current.up = isUp;
     keysRef.current.down = isDown;
@@ -409,50 +441,54 @@ function TouchAnalog({ keysRef }) {
     keysRef.current.right = isRight;
 
     setActiveDirs({ up: isUp, down: isDown, left: isLeft, right: isRight });
-  };
+  }, [keysRef]);
 
-  const resetStick = () => {
-    setKnobPos({ x: 0, y: 0 });
-    keysRef.current.up = false;
-    keysRef.current.down = false;
-    keysRef.current.left = false;
-    keysRef.current.right = false;
-    setActiveDirs({ up: false, down: false, left: false, right: false });
-    activePointerId.current = null;
-  };
+  useEffect(() => {
+    const handleGlobalUp = () => {
+      if (isDraggingRef.current) {
+        resetStick();
+      }
+    };
+    const handleGlobalMove = (e) => {
+      if (!isDraggingRef.current) return;
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+      if (clientX !== undefined && clientY !== undefined) {
+        updateFromCoords(clientX, clientY);
+      }
+    };
 
-  const handlePointerDown = (e) => {
-    e.preventDefault();
-    if (!baseRef.current) return;
-    activePointerId.current = e.pointerId;
-    try {
-      e.target.setPointerCapture(e.pointerId);
-    } catch (_) {}
+    window.addEventListener("pointerup", handleGlobalUp);
+    window.addEventListener("pointercancel", handleGlobalUp);
+    window.addEventListener("touchend", handleGlobalUp);
+    window.addEventListener("touchcancel", handleGlobalUp);
+    window.addEventListener("pointermove", handleGlobalMove);
+    window.addEventListener("touchmove", handleGlobalMove, { passive: false });
 
-    const rect = baseRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    return () => {
+      window.removeEventListener("pointerup", handleGlobalUp);
+      window.removeEventListener("pointercancel", handleGlobalUp);
+      window.removeEventListener("touchend", handleGlobalUp);
+      window.removeEventListener("touchcancel", handleGlobalUp);
+      window.removeEventListener("pointermove", handleGlobalMove);
+      window.removeEventListener("touchmove", handleGlobalMove);
+    };
+  }, [resetStick, updateFromCoords]);
 
-    const dx = e.clientX - centerX;
-    const dy = e.clientY - centerY;
-    updateDirection(dx, dy);
-  };
-
-  const handlePointerMove = (e) => {
-    if (activePointerId.current !== e.pointerId || !baseRef.current) return;
-    e.preventDefault();
-    const rect = baseRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    const dx = e.clientX - centerX;
-    const dy = e.clientY - centerY;
-    updateDirection(dx, dy);
-  };
-
-  const handlePointerUp = (e) => {
-    if (activePointerId.current === e.pointerId) {
-      resetStick();
+  const handleStart = (e) => {
+    isDraggingRef.current = true;
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    }
+    if (clientX !== undefined && clientY !== undefined) {
+      updateFromCoords(clientX, clientY);
     }
   };
 
@@ -461,10 +497,8 @@ function TouchAnalog({ keysRef }) {
       <div
         ref={baseRef}
         className="touch-analog-base"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerDown={handleStart}
+        onTouchStart={handleStart}
       >
         <div className={`analog-dir dir-up ${activeDirs.up ? "active" : ""}`}>▲</div>
         <div className={`analog-dir dir-down ${activeDirs.down ? "active" : ""}`}>▼</div>
@@ -3079,28 +3113,65 @@ export default function DinoGame() {
           <TouchAnalog keysRef={keysRef} />
 
           <div className="mobile-action-container">
-            <button
-              type="button"
-              className="mobile-action-btn mobile-btn-duck"
-              onPointerDown={setKey("down", true)}
-              onPointerUp={setKey("down", false)}
-              onPointerLeave={setKey("down", false)}
-              onPointerCancel={setKey("down", false)}
-            >
-              ▼
-              <span className="mobile-btn-label">TUNDUK</span>
-            </button>
-            <button
-              type="button"
-              className="mobile-action-btn mobile-btn-jump"
-              onPointerDown={setKey("up", true)}
-              onPointerUp={setKey("up", false)}
-              onPointerLeave={setKey("up", false)}
-              onPointerCancel={setKey("up", false)}
-            >
-              ▲
-              <span className="mobile-btn-label">LONCAT</span>
-            </button>
+            {/* ROW SKILLS */}
+            <div className="mobile-skills-row">
+              <button
+                type="button"
+                className={`mobile-skill-btn rampage ${rampageEnergy < 100 ? "disabled" : ""}`}
+                onClick={triggerRampage}
+                disabled={rampageEnergy < 100}
+              >
+                🔥 SUPER {rampageEnergy}%
+              </button>
+              <button
+                type="button"
+                className={`mobile-skill-btn slam ${slamCdPct > 0 ? "disabled" : ""}`}
+                onClick={triggerSlam}
+                disabled={slamCdPct > 0}
+              >
+                💥 SLAM
+                {slamCdPct > 0 && (
+                  <span className="mobile-cd-bar" style={{ height: `${slamCdPct * 100}%` }} />
+                )}
+              </button>
+              <button
+                type="button"
+                className={`mobile-skill-btn roar ${roarCdPct > 0 ? "disabled" : ""}`}
+                onClick={triggerRoar}
+                disabled={roarCdPct > 0}
+              >
+                📢 REX
+                {roarCdPct > 0 && (
+                  <span className="mobile-cd-bar" style={{ height: `${roarCdPct * 100}%` }} />
+                )}
+              </button>
+            </div>
+
+            {/* ROW TOMBOL UTAMA */}
+            <div className="mobile-main-actions-row">
+              <button
+                type="button"
+                className="mobile-action-btn mobile-btn-duck"
+                onPointerDown={setKey("down", true)}
+                onPointerUp={setKey("down", false)}
+                onPointerLeave={setKey("down", false)}
+                onPointerCancel={setKey("down", false)}
+              >
+                ▼
+                <span className="mobile-btn-label">TUNDUK</span>
+              </button>
+              <button
+                type="button"
+                className="mobile-action-btn mobile-btn-jump"
+                onPointerDown={setKey("up", true)}
+                onPointerUp={setKey("up", false)}
+                onPointerLeave={setKey("up", false)}
+                onPointerCancel={setKey("up", false)}
+              >
+                ▲
+                <span className="mobile-btn-label">LONCAT</span>
+              </button>
+            </div>
           </div>
         </>
       )}
