@@ -29,3 +29,29 @@
   opacity: 0.9;
   font-family: monospace;
 }
+
+@media (max-width: 900px) {
+  .app-container {
+    padding: 4px;
+    justify-content: flex-start;
+  }
+  .main-title {
+    font-size: 16px;
+    margin: 2px 0;
+  }
+  .main-subtitle {
+    font-size: 10px;
+    margin: 0 0 4px 0;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .main-title,
+  .main-subtitle {
+    display: none;
+  }
+  .app-container {
+    padding: 0;
+    justify-content: center;
+  }
+}

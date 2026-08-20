@@ -378,6 +378,109 @@ const shuffle = (arr) => {
   return a;
 };
 
+// ANALOG JOYSTICK COMPONENT UNTUK PENGGUNA MOBILE (POJOK KIRI BAWAH)
+function TouchAnalog({ keysRef }) {
+  const baseRef = useRef(null);
+  const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
+  const [activeDirs, setActiveDirs] = useState({ up: false, down: false, left: false, right: false });
+  const activePointerId = useRef(null);
+
+  const updateDirection = (dx, dy) => {
+    const maxRadius = 36;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    let clampedX = dx;
+    let clampedY = dy;
+    if (dist > maxRadius) {
+      clampedX = (dx / dist) * maxRadius;
+      clampedY = (dy / dist) * maxRadius;
+    }
+    setKnobPos({ x: clampedX, y: clampedY });
+
+    const deadzone = 8;
+    const isUp = dy < -deadzone;
+    const isDown = dy > deadzone;
+    const isLeft = dx < -deadzone;
+    const isRight = dx > deadzone;
+
+    keysRef.current.up = isUp;
+    keysRef.current.down = isDown;
+    keysRef.current.left = isLeft;
+    keysRef.current.right = isRight;
+
+    setActiveDirs({ up: isUp, down: isDown, left: isLeft, right: isRight });
+  };
+
+  const resetStick = () => {
+    setKnobPos({ x: 0, y: 0 });
+    keysRef.current.up = false;
+    keysRef.current.down = false;
+    keysRef.current.left = false;
+    keysRef.current.right = false;
+    setActiveDirs({ up: false, down: false, left: false, right: false });
+    activePointerId.current = null;
+  };
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    if (!baseRef.current) return;
+    activePointerId.current = e.pointerId;
+    try {
+      e.target.setPointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const rect = baseRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    updateDirection(dx, dy);
+  };
+
+  const handlePointerMove = (e) => {
+    if (activePointerId.current !== e.pointerId || !baseRef.current) return;
+    e.preventDefault();
+    const rect = baseRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    updateDirection(dx, dy);
+  };
+
+  const handlePointerUp = (e) => {
+    if (activePointerId.current === e.pointerId) {
+      resetStick();
+    }
+  };
+
+  return (
+    <div className="touch-analog-container">
+      <div
+        ref={baseRef}
+        className="touch-analog-base"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <div className={`analog-dir dir-up ${activeDirs.up ? "active" : ""}`}>▲</div>
+        <div className={`analog-dir dir-down ${activeDirs.down ? "active" : ""}`}>▼</div>
+        <div className={`analog-dir dir-left ${activeDirs.left ? "active" : ""}`}>◀</div>
+        <div className={`analog-dir dir-right ${activeDirs.right ? "active" : ""}`}>▶</div>
+        <div
+          className="touch-analog-knob"
+          style={{
+            transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function DinoGame() {
   const canvasRef = useRef(null);
   const [score, setScore] = useState(0);
@@ -402,6 +505,33 @@ export default function DinoGame() {
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [overlayTab, setOverlayTab] = useState("skin");
   const [difficulty, setDifficulty] = useState("normal");
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth <= 900 || window.matchMedia("(pointer: coarse)").matches;
+      const isPort = window.innerHeight > window.innerWidth;
+      setIsPortraitMobile(isMobile && isPort);
+    };
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
+
+  const requestLandscape = async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen().catch(() => {});
+      }
+      if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
+        await window.screen.orientation.lock("landscape").catch(() => {});
+      }
+    } catch (_) {}
+  };
 
   const [coins, setCoins] = useState(() => loadJSON(COINS_KEY, 0));
   const [upgrades, setUpgrades] = useState(() =>
@@ -992,6 +1122,7 @@ export default function DinoGame() {
   };
 
   const startGame = () => {
+    requestLandscape();
     const s = stateRef.current;
     s.dino = { x: DINO_START.x, y: DINO_START.y, w: DINO_SIZE, h: DINO_SIZE, dir: "right" };
     s.level = 1;
@@ -2547,6 +2678,21 @@ export default function DinoGame() {
 
   return (
     <div className="dino-game-wrapper">
+      {isPortraitMobile && (
+        <div className="portrait-landscape-prompt">
+          <div className="portrait-prompt-content">
+            <span className="rotate-icon">🔄</span>
+            <div className="portrait-prompt-text">
+              <strong>Mode Landscape Disarankan!</strong>
+              <span>Putar HP Anda ke mode mendatar (landscape) untuk layar penuh.</span>
+            </div>
+            <button type="button" className="rotate-lock-btn" onClick={requestLandscape}>
+              📱 Fullscreen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* HEADER HUD BAR */}
       <div className="dino-header-bar">
         <button
@@ -2927,55 +3073,36 @@ export default function DinoGame() {
         )}
       </div>
 
-      {/* D-PAD UNTUK PENGGUNA MOBILE */}
+      {/* CONTROLLER ANALOG & BUTTONS UNTUK PENGGUNA MOBILE */}
       {started && !gameOver && (
-        <div className="dpad">
-          <button
-            className="dpad-btn dpad-up"
-            onPointerDown={setKey("up", true)}
-            onPointerUp={setKey("up", false)}
-            onPointerLeave={setKey("up", false)}
-            onPointerCancel={setKey("up", false)}
-          >
-            ▲
-          </button>
-          <div className="dpad-mid">
+        <>
+          <TouchAnalog keysRef={keysRef} />
+
+          <div className="mobile-action-container">
             <button
-              className="dpad-btn dpad-left"
-              onPointerDown={setKey("left", true)}
-              onPointerUp={setKey("left", false)}
-              onPointerLeave={setKey("left", false)}
-              onPointerCancel={setKey("left", false)}
+              type="button"
+              className="mobile-action-btn mobile-btn-duck"
+              onPointerDown={setKey("down", true)}
+              onPointerUp={setKey("down", false)}
+              onPointerLeave={setKey("down", false)}
+              onPointerCancel={setKey("down", false)}
             >
-              ◀
+              ▼
+              <span className="mobile-btn-label">TUNDUK</span>
             </button>
             <button
-              className="dpad-btn dpad-roar"
-              onClick={triggerRoar}
-              title="Auman Roar (R)"
+              type="button"
+              className="mobile-action-btn mobile-btn-jump"
+              onPointerDown={setKey("up", true)}
+              onPointerUp={setKey("up", false)}
+              onPointerLeave={setKey("up", false)}
+              onPointerCancel={setKey("up", false)}
             >
-              REX
-            </button>
-            <button
-              className="dpad-btn dpad-right"
-              onPointerDown={setKey("right", true)}
-              onPointerUp={setKey("right", false)}
-              onPointerLeave={setKey("right", false)}
-              onPointerCancel={setKey("right", false)}
-            >
-              ▶
+              ▲
+              <span className="mobile-btn-label">LONCAT</span>
             </button>
           </div>
-          <button
-            className="dpad-btn dpad-down"
-            onPointerDown={setKey("down", true)}
-            onPointerUp={setKey("down", false)}
-            onPointerLeave={setKey("down", false)}
-            onPointerCancel={setKey("down", false)}
-          >
-            ▼
-          </button>
-        </div>
+        </>
       )}
     </div>
   );
