@@ -585,12 +585,15 @@ export default function DinoGame() {
   const [overlayTab, setOverlayTab] = useState("skin");
   const [difficulty, setDifficulty] = useState("normal");
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
       const isMobile = window.innerWidth <= 900 || window.matchMedia("(pointer: coarse)").matches;
       const isPort = window.innerHeight > window.innerWidth;
+      const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
       setIsPortraitMobile(isMobile && isPort);
+      setIsTouchDevice(hasTouch);
     };
     checkOrientation();
     window.addEventListener("resize", checkOrientation);
@@ -3162,7 +3165,7 @@ export default function DinoGame() {
       </div>
 
       {/* CONTROLLER ANALOG & BUTTONS UNTUK PENGGUNA MOBILE */}
-      {started && !gameOver && (
+      {started && !gameOver && isTouchDevice && (
         <>
           <TouchAnalog keysRef={keysRef} />
 
