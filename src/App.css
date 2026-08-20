@@ -1,0 +1,31 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+#dino-section {
+  width: 100%;
+  max-width: 840px;
+  text-align: center;
+}
+
+.main-title {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  color: #fff59d;
+  text-shadow: 0 2px 8px rgba(255, 245, 157, 0.35);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-subtitle {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #b388ff;
+  opacity: 0.9;
+  font-family: monospace;
+}
