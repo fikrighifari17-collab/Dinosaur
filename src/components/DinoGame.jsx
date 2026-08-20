@@ -213,7 +213,21 @@ const UPGRADES_KEY = "dinoGame_upgrades";
 function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (parsed === null || parsed === undefined) return fallback;
+    if (typeof fallback === "object" && !Array.isArray(fallback)) {
+      if (typeof parsed !== "object" || Array.isArray(parsed)) return fallback;
+      return { ...fallback, ...parsed };
+    }
+    if (Array.isArray(fallback)) {
+      if (!Array.isArray(parsed)) return fallback;
+      return parsed;
+    }
+    if (typeof fallback === "number") {
+      return typeof parsed === "number" ? parsed : fallback;
+    }
+    return parsed;
   } catch {
     return fallback;
   }
