@@ -794,6 +794,14 @@ export default function DinoGame() {
     showHit(`${item.name} ditingkatkan ke Lv. ${curLvl + 1}!`);
   };
 
+  const isUIObstructed = (x, y) => {
+    // Area tombol UI Skill (SUPER, SLAM, ROAR) di pojok kanan bawah canvas
+    if (x >= 390 && y >= 270) return true;
+    // Area badges overlay di pojok kiri atas canvas
+    if (x <= 260 && y <= 45) return true;
+    return false;
+  };
+
   const getSafePosition = (w, h, maxX, maxY, anchor) => {
     let x, y, dist, portalDist;
     let attempts = 0;
@@ -823,9 +831,11 @@ export default function DinoGame() {
       const pos = getSafePosition(20, 20, CANVAS_W - 10, CANVAS_H - 10, anchor);
       x = pos.x + 10;
       y = pos.y + 10;
-      ok = obstacles.every((o) => distToRect(x, y, o) >= FIREFLY_OBSTACLE_GAP);
+      const okObstacle = obstacles.every((o) => distToRect(x, y, o) >= FIREFLY_OBSTACLE_GAP);
+      const okUI = !isUIObstructed(x, y);
+      ok = okObstacle && okUI;
       attempts++;
-    } while (!ok && attempts < 60);
+    } while (!ok && attempts < 100);
     return { x, y };
   };
 
@@ -840,9 +850,10 @@ export default function DinoGame() {
       const okFirefly = fireflies.every(
         (f) => Math.hypot(f.x - x, f.y - y) >= POWERUP_GAP
       );
-      ok = okObstacle && okFirefly;
+      const okUI = !isUIObstructed(x, y);
+      ok = okObstacle && okFirefly && okUI;
       attempts++;
-    } while (!ok && attempts < 60);
+    } while (!ok && attempts < 100);
     return { x, y };
   };
 
@@ -1095,8 +1106,10 @@ export default function DinoGame() {
 
     // Spawn initial rain
     for (let i = 0; i < 18; i++) {
+      let fx = Math.random() * (CANVAS_W - 40) + 20;
+      if (fx >= 390) fx = Math.random() * 360 + 20;
       s.fireflies.push({
-        x: Math.random() * CANVAS_W,
+        x: fx,
         y: -Math.random() * CANVAS_H,
         vy: 2.2 + Math.random() * 1.5,
         r: 6,
@@ -1737,8 +1750,10 @@ export default function DinoGame() {
       // COIN FEVER RAIN LOGIC
       if (s.isCoinFever) {
         if (Math.random() < 0.35) {
+          let fx = Math.random() * (CANVAS_W - 40) + 20;
+          if (fx >= 390) fx = Math.random() * 360 + 20;
           s.fireflies.push({
-            x: Math.random() * CANVAS_W,
+            x: fx,
             y: -20,
             vy: 2.2 + Math.random() * 2.0,
             r: 6,
@@ -1750,6 +1765,9 @@ export default function DinoGame() {
         s.fireflies.forEach((f) => {
           if (!f.collected && f.vy) {
             f.y += f.vy;
+            if (isUIObstructed(f.x, f.y)) {
+              f.y = CANVAS_H + 50;
+            }
           }
         });
       }
@@ -1898,6 +1916,13 @@ export default function DinoGame() {
       const boostedReveal = now < s.effects.revealBoostUntil ? REVEAL_RADIUS * 1.6 : REVEAL_RADIUS;
       for (const f of s.fireflies) {
         if (f.collected) continue;
+
+        // Cegah kunang-kunang agar tidak diam di bawah tombol UI Skill
+        if (isUIObstructed(f.x, f.y)) {
+          if (f.x >= 390) f.x -= 3;
+          if (f.y >= 270) f.y -= 3;
+        }
+
         const dx = d.x + d.w / 2 - f.x;
         const dy = d.y + d.h / 2 - f.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
