@@ -2211,21 +2211,21 @@ export default function DinoGame() {
       grad.addColorStop(0.75, "#9e2a2b");
       grad.addColorStop(1, "#ff6b35");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillRect(-50, -50, CANVAS_W + 100, CANVAS_H + 100);
 
       const sunGlow = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H - 20, 10, CANVAS_W / 2, CANVAS_H - 20, 220);
       sunGlow.addColorStop(0, "rgba(255, 215, 0, 0.45)");
       sunGlow.addColorStop(0.5, "rgba(255, 107, 53, 0.2)");
       sunGlow.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = sunGlow;
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillRect(-50, -50, CANVAS_W + 100, CANVAS_H + 100);
 
       ctx.fillStyle = "rgba(45, 11, 46, 0.75)";
       ctx.beginPath();
-      ctx.moveTo(0, CANVAS_H);
+      ctx.moveTo(-50, CANVAS_H + 50);
       ctx.quadraticCurveTo(250, CANVAS_H - 80, 500, CANVAS_H - 40);
-      ctx.quadraticCurveTo(700, CANVAS_H - 90, CANVAS_W, CANVAS_H - 30);
-      ctx.lineTo(CANVAS_W, CANVAS_H);
+      ctx.quadraticCurveTo(700, CANVAS_H - 90, CANVAS_W + 50, CANVAS_H - 30);
+      ctx.lineTo(CANVAS_W + 50, CANVAS_H + 50);
       ctx.fill();
     } else if (theme === "cyber") {
       const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
@@ -2233,21 +2233,21 @@ export default function DinoGame() {
       grad.addColorStop(0.6, "#0a192f");
       grad.addColorStop(1, "#172a45");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillRect(-50, -50, CANVAS_W + 100, CANVAS_H + 100);
 
       ctx.strokeStyle = "rgba(0, 229, 255, 0.18)";
       ctx.lineWidth = 1;
       const gridOffset = (now * 0.05) % 20;
-      for (let y = CANVAS_H - 140; y < CANVAS_H; y += 16) {
+      for (let y = CANVAS_H - 140; y < CANVAS_H + 50; y += 16) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(CANVAS_W, y);
+        ctx.moveTo(-50, y);
+        ctx.lineTo(CANVAS_W + 50, y);
         ctx.stroke();
       }
-      for (let x = -gridOffset; x < CANVAS_W; x += 35) {
+      for (let x = -gridOffset - 50; x < CANVAS_W + 50; x += 35) {
         ctx.beginPath();
         ctx.moveTo(CANVAS_W / 2, CANVAS_H - 140);
-        ctx.lineTo(x, CANVAS_H);
+        ctx.lineTo(x, CANVAS_H + 50);
         ctx.stroke();
       }
     } else if (theme === "aurora") {
@@ -2256,7 +2256,7 @@ export default function DinoGame() {
       grad.addColorStop(0.6, "#082a36");
       grad.addColorStop(1, "#0d414e");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillRect(-50, -50, CANVAS_W + 100, CANVAS_H + 100);
 
       ctx.save();
       const aurGrad = ctx.createLinearGradient(0, 30, 0, 220);
@@ -2266,13 +2266,13 @@ export default function DinoGame() {
       ctx.fillStyle = aurGrad;
 
       ctx.beginPath();
-      ctx.moveTo(0, 80);
-      for (let x = 0; x <= CANVAS_W; x += 35) {
+      ctx.moveTo(-50, 80);
+      for (let x = -50; x <= CANVAS_W + 50; x += 35) {
         const y = 70 + Math.sin(x * 0.009 + now * 0.0015) * 40 + Math.cos(x * 0.018 + now * 0.001) * 18;
         ctx.lineTo(x, y);
       }
-      ctx.lineTo(CANVAS_W, 250);
-      ctx.lineTo(0, 250);
+      ctx.lineTo(CANVAS_W + 50, 250);
+      ctx.lineTo(-50, 250);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
@@ -2282,18 +2282,18 @@ export default function DinoGame() {
       grad.addColorStop(0.5, "#4a0808");
       grad.addColorStop(1, "#701010");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillRect(-50, -50, CANVAS_W + 100, CANVAS_H + 100);
 
       ctx.fillStyle = "rgba(18, 2, 2, 0.85)";
       ctx.beginPath();
-      ctx.moveTo(0, CANVAS_H);
+      ctx.moveTo(-50, CANVAS_H + 50);
       ctx.lineTo(90, CANVAS_H - 110);
       ctx.lineTo(180, CANVAS_H - 50);
       ctx.lineTo(320, CANVAS_H - 140);
       ctx.lineTo(490, CANVAS_H - 65);
       ctx.lineTo(640, CANVAS_H - 120);
-      ctx.lineTo(CANVAS_W, CANVAS_H - 30);
-      ctx.lineTo(CANVAS_W, CANVAS_H);
+      ctx.lineTo(CANVAS_W + 50, CANVAS_H - 30);
+      ctx.lineTo(CANVAS_W + 50, CANVAS_H + 50);
       ctx.fill();
     } else {
       const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
@@ -2319,7 +2319,7 @@ export default function DinoGame() {
         grad.addColorStop(1, "#120c2b");
       }
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillRect(-50, -50, CANVAS_W + 100, CANVAS_H + 100);
 
       const neb = ctx.createRadialGradient(300, 130, 10, 300, 130, 200);
       neb.addColorStop(0, "rgba(179, 136, 255, 0.28)");
@@ -2435,6 +2435,7 @@ export default function DinoGame() {
   };
 
   const draw = (ctx, s, now, isMoving, bgTheme) => {
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
     ctx.save();
     if (s.shakeTime > 0) {
       s.shakeTime--;
