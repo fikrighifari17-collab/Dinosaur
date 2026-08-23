@@ -701,9 +701,9 @@ export default function DinoGame() {
 
   useEffect(() => {
     const checkOrientation = () => {
-      const isMobile = window.innerWidth <= 900 || window.matchMedia("(pointer: coarse)").matches;
+      const isMobile = window.innerWidth <= 900;
       const isPort = window.innerHeight > window.innerWidth;
-      const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+      const hasTouch = isMobile && ("ontouchstart" in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches);
       setIsPortraitMobile(isMobile && isPort);
       setIsTouchDevice(hasTouch);
     };
@@ -731,17 +731,17 @@ export default function DinoGame() {
 
   const [coins, setCoins] = useState(() => loadJSON(COINS_KEY, 0));
   const [upgrades, setUpgrades] = useState(() =>
-    loadJSON(UPGRADES_KEY, { speed: 0, shield: 0, magnet: 0, roar: 0 })
+    loadJSON(UPGRADES_KEY, { speed: 3, shield: 3, magnet: 3, roar: 3 })
   );
 
   const [highScores, setHighScores] = useState(() =>
     loadJSON(HIGHSCORE_KEY, { best: 0, bestLevel: 0 })
   );
   const [unlockedAchievements, setUnlockedAchievements] = useState(() =>
-    loadJSON(ACHIEVEMENT_KEY, [])
+    ACHIEVEMENTS.map((a) => a.id)
   );
   const [unlockedSkins, setUnlockedSkins] = useState(() =>
-    loadJSON(SKIN_KEY, Object.keys(DINO_SKINS))
+    Object.keys(DINO_SKINS)
   );
   const [selectedSkin, setSelectedSkin] = useState("classic");
   const [bgTheme, setBgTheme] = useState(() =>
@@ -756,16 +756,16 @@ export default function DinoGame() {
   }, [bgTheme]);
 
   const [selectedAccessory, setSelectedAccessory] = useState(() =>
-    loadJSON(SELECTED_ACCESSORY_KEY, "none")
+    loadJSON(SELECTED_ACCESSORY_KEY, "crown")
   );
   const [unlockedAccessories, setUnlockedAccessories] = useState(() =>
-    loadJSON(UNLOCKED_ACCESSORIES_KEY, ["none"])
+    Object.keys(ACCESSORY_ITEMS)
   );
   const [selectedPet, setSelectedPet] = useState(() =>
-    loadJSON(SELECTED_PET_KEY, "none")
+    loadJSON(SELECTED_PET_KEY, "ptero")
   );
   const [unlockedPets, setUnlockedPets] = useState(() =>
-    loadJSON(UNLOCKED_PETS_KEY, ["none"])
+    Object.keys(PET_ITEMS)
   );
   const [dashCdPct, setDashCdPct] = useState(0);
   const [announcerText, setAnnouncerText] = useState("");
@@ -854,50 +854,23 @@ export default function DinoGame() {
 
   const diffCfg = DIFFICULTY_CONFIGS[difficulty] || DIFFICULTY_CONFIGS.normal;
 
+  const buyUpgrade = (item) => {
+    const newUpgrades = { ...upgrades, [item.id]: item.maxLvl };
+    setUpgrades(newUpgrades);
+    saveJSON(UPGRADES_KEY, newUpgrades);
+    showHit(`${item.name} Lv. MAX Aktif!`);
+  };
+
   const buyAccessory = (item) => {
-    if (unlockedAccessories.includes(item.id)) {
-      setSelectedAccessory(item.id);
-      saveJSON(SELECTED_ACCESSORY_KEY, item.id);
-      showHit(`Aksesori ${item.name} digunakan!`);
-      return;
-    }
-    if (coins < item.cost) {
-      showHit("Coin tidak cukup!");
-      return;
-    }
-    const newCoins = coins - item.cost;
-    const newUnlocked = [...unlockedAccessories, item.id];
-    setCoins(newCoins);
-    setUnlockedAccessories(newUnlocked);
     setSelectedAccessory(item.id);
-    saveJSON(COINS_KEY, newCoins);
-    saveJSON(UNLOCKED_ACCESSORIES_KEY, newUnlocked);
     saveJSON(SELECTED_ACCESSORY_KEY, item.id);
-    playSound("powerup", soundEnabled);
-    showHit(`Aksesori ${item.name} berhasil dibeli!`);
+    showHit(`Aksesori ${item.name} dipasang!`);
   };
 
   const buyPet = (item) => {
-    if (unlockedPets.includes(item.id)) {
-      setSelectedPet(item.id);
-      saveJSON(SELECTED_PET_KEY, item.id);
-      showHit(`Pet ${item.name} dipasang!`);
-      return;
-    }
-    if (coins < item.cost) {
-      showHit("Coin tidak cukup!");
-      return;
-    }
-    const newCoins = coins - item.cost;
-    const newUnlocked = [...unlockedPets, item.id];
-    setCoins(newCoins);
-    setUnlockedPets(newUnlocked);
     setSelectedPet(item.id);
-    saveJSON(COINS_KEY, newCoins);
-    saveJSON(UNLOCKED_PETS_KEY, newUnlocked);
     saveJSON(SELECTED_PET_KEY, item.id);
-    playSound("powerup", soundEnabled);
-    showHit(`Pet ${item.name} berhasil dibeli!`);
+    showHit(`Pet ${item.name} dipasang!`);
   };
 
   const updateQuestProgress = (questId, amount = 1) => {
@@ -1135,29 +1108,6 @@ export default function DinoGame() {
     }
   };
 
-  const triggerLavaShockwave = () => {
-    const s = stateRef.current;
-    showHit("🔥 LAVA SHOCKWAVE COMBO! Layar Dibersihkan!");
-    playSound("slam", soundEnabled, 0.6);
-    playSound("roar", soundEnabled, 1.4);
-    s.shakeTime = 22;
-    s.shakeIntensity = 16;
-    const cx = s.dino.x + s.dino.w / 2;
-    const cy = s.dino.y + s.dino.h / 2;
-
-    for (let i = 0; i < 45; i++) {
-      spawnParticles(cx, cy, "#ff3d00", 25);
-      spawnParticles(cx, cy, "#ffd54f", 25);
-    }
-    s.predators = s.predators.filter((p) => {
-      spawnParticles(p.x + p.w / 2, p.y + p.h / 2, "#ffd54f", 18);
-      return false;
-    });
-    s.bossFireballs = [];
-    setScore((sc) => sc + 150);
-    updateQuestProgress("q2", 1);
-  };
-
   const triggerDash = () => {
     const s = stateRef.current;
     const now = Date.now();
@@ -1179,14 +1129,6 @@ export default function DinoGame() {
     const now = Date.now();
     if (!started || gameOver || isPaused) return;
     if (now < s.roarCooldownUntil) return;
-
-    const lastSlamTime = s.lastSkillTimes.slam;
-    s.lastSkillTimes.roar = now;
-
-    if (now - lastSlamTime < 1500) {
-      triggerLavaShockwave();
-      return;
-    }
 
     const roarUpgradeBonus = (upgrades.roar || 0) * 1500;
     const actualCd = Math.max(3000, diffCfg.roarCd - roarUpgradeBonus);
@@ -1236,14 +1178,6 @@ export default function DinoGame() {
     const now = Date.now();
     if (!started || gameOver || isPaused) return;
     if (now < s.slamCooldownUntil) return;
-
-    const lastRoarTime = s.lastSkillTimes.roar;
-    s.lastSkillTimes.slam = now;
-
-    if (now - lastRoarTime < 1500) {
-      triggerLavaShockwave();
-      return;
-    }
 
     s.slamCooldownUntil = now + SLAM_COOLDOWN_MS;
     playSound("slam", soundEnabled);
@@ -3563,7 +3497,6 @@ export default function DinoGame() {
               {overlayTab === "acc" && (
                 <div className="skin-picker-compact" onClick={(e) => e.stopPropagation()}>
                   {Object.values(ACCESSORY_ITEMS).map((acc) => {
-                    const unlocked = unlockedAccessories.includes(acc.id);
                     return (
                       <button
                         key={acc.id}
@@ -3573,7 +3506,7 @@ export default function DinoGame() {
                         title={acc.desc}
                       >
                         <span className="skin-name-compact">
-                          {unlocked ? (selectedAccessory === acc.id ? "✔ " + acc.name : acc.name) : `🟡 ${acc.cost} - ${acc.name}`}
+                          {selectedAccessory === acc.id ? "✔ " + acc.name : acc.name}
                         </span>
                       </button>
                     );
@@ -3585,7 +3518,6 @@ export default function DinoGame() {
               {overlayTab === "pet" && (
                 <div className="skin-picker-compact" onClick={(e) => e.stopPropagation()}>
                   {Object.values(PET_ITEMS).map((p) => {
-                    const unlocked = unlockedPets.includes(p.id);
                     return (
                       <button
                         key={p.id}
@@ -3595,7 +3527,7 @@ export default function DinoGame() {
                         title={p.desc}
                       >
                         <span className="skin-name-compact">
-                          {unlocked ? (selectedPet === p.id ? "✔ " + p.name : p.name) : `🟡 ${p.cost} - ${p.name}`}
+                          {selectedPet === p.id ? "✔ " + p.name : p.name}
                         </span>
                       </button>
                     );
@@ -3629,24 +3561,19 @@ export default function DinoGame() {
               {overlayTab === "skin" && (
                 <div className="skin-picker-compact" onClick={(e) => e.stopPropagation()}>
                   {Object.entries(DINO_SKINS).map(([id, skin]) => {
-                    const unlocked =
-                      !skin.unlockCondition || unlockedSkins.includes(id);
                     return (
                       <button
                         key={id}
                         type="button"
-                        disabled={!unlocked}
                         className={`skin-chip ${selectedSkin === id ? "active" : ""}`}
-                        onClick={() => unlocked && setSelectedSkin(id)}
-                        title={unlocked ? skin.desc : skin.unlockLabel}
+                        onClick={() => setSelectedSkin(id)}
+                        title={skin.desc}
                       >
                         <span
                           className="skin-swatch-compact"
                           style={{ background: skin.body, borderColor: skin.dark }}
                         />
-                        <span className="skin-name-compact">
-                          {unlocked ? skin.name : "🔒 " + skin.name}
-                        </span>
+                        <span className="skin-name-compact">{skin.name}</span>
                       </button>
                     );
                   })}
