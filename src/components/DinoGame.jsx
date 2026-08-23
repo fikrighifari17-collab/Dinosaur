@@ -3492,6 +3492,13 @@ export default function DinoGame() {
                 >
                   📜 Misi
                 </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${overlayTab === "info" ? "active" : ""}`}
+                  onClick={() => setOverlayTab("info")}
+                >
+                  📖 Tutorial
+                </button>
               </div>
 
               {/* TAB CONTENT: AKSESORI */}
@@ -3627,14 +3634,17 @@ export default function DinoGame() {
                 </div>
               )}
 
-              {/* TAB CONTENT: CARA MAIN */}
+              {/* TAB CONTENT: CARA MAIN / TUTORIAL */}
               {overlayTab === "info" && (
                 <div className="tab-panel-compact" onClick={(e) => e.stopPropagation()}>
                   <p className="compact-info-text">
-                    • <strong>Super Giga (E):</strong> 100% energi = berubah jadi Super Dino & memangsa predator!<br />
-                    • <strong>Jurus Q (Slam):</strong> Menghancurkan kaktus di sekitar dino!<br />
-                    • <strong>Jurus R (Roar):</strong> Gelombang pendorong predator!<br />
-                    • <strong>Lava Fireball Boss:</strong> Level 5 Boss menembakkan bola api yang harus dihindari!
+                    🎯 <strong>Tujuan Utama:</strong> Kumpulkan semua kunang-kunang di arena untuk membuka <strong>Portal Ungu</strong> ke level berikutnya.<br /><br />
+                    🎮 <strong>Kontrol Gerak:</strong> Gunakan <strong>Panah / WASD</strong> di keyboard. (Di Mobile gunakan Joystick Analog).<br /><br />
+                    ⚡ <strong>Dodge Dash (Shift / Z):</strong> Lakukan meluncur kilat dengan perlindungan kebal sementara (cooldown 3s).<br /><br />
+                    💥 <strong>Ground Slam (Q):</strong> Hancurkan kaktus rintangan di sekitar dino.<br /><br />
+                    📢 <strong>Roar / Auman (R):</strong> Hembuskan gelombang suara untuk mendorong predator menjauh.<br /><br />
+                    🔥 <strong>Super Giga Dino (E):</strong> Setelah energi 100%, aktifkan mode Super untuk memangsa predator!<br /><br />
+                    ⚠️ <strong>Predator & Jebakan:</strong> Hindari predator merah dan kunang-kunang jebakan (kunang merah saat didekati).
                   </p>
                 </div>
               )}
