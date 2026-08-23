@@ -424,172 +424,159 @@ function drawRoundRect(ctx, x, y, w, h, radii = 0) {
 }
 
 // ANALOG JOYSTICK COMPONENT UNTUK PENGGUNA MOBILE (POJOK KIRI BAWAH)
-function TouchAnalog({ keysRef }) {
+function TouchAnalog({ onAnalogUpdate }) {
   const baseRef = useRef(null);
   const knobRef = useRef(null);
-  const touchIdRef = useRef(null);
+  const pointerIdRef = useRef(null);
   const isDraggingRef = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [activeDirs, setActiveDirs] = useState({ up: false, down: false, left: false, right: false });
   const activeDirsRef = useRef({ up: false, down: false, left: false, right: false });
 
   const resetStick = useCallback(() => {
     isDraggingRef.current = false;
-    touchIdRef.current = null;
+    pointerIdRef.current = null;
+    setIsDragging(false);
+
     if (knobRef.current) {
-      knobRef.current.style.transform = "translate(0px, 0px)";
+      knobRef.current.style.transform = "translate3d(0px, 0px, 0)";
     }
-    keysRef.current.up = false;
-    keysRef.current.down = false;
-    keysRef.current.left = false;
-    keysRef.current.right = false;
-    activeDirsRef.current = { up: false, down: false, left: false, right: false };
-    setActiveDirs({ up: false, down: false, left: false, right: false });
-  }, [keysRef]);
+
+    const resetDirs = { up: false, down: false, left: false, right: false };
+    onAnalogUpdate(resetDirs);
+    activeDirsRef.current = resetDirs;
+    setActiveDirs(resetDirs);
+  }, [onAnalogUpdate]);
 
   const updateFromCoords = useCallback((clientX, clientY) => {
-    if (!baseRef.current) return;
+    if (!baseRef.current || !isDraggingRef.current) return;
+
     const rect = baseRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
     const dx = clientX - centerX;
     const dy = clientY - centerY;
-
-    const maxRadius = 45;
     const dist = Math.hypot(dx, dy);
+
+    const maxRadius = Math.max(20, rect.width / 2 - 8);
 
     let clampedX = dx;
     let clampedY = dy;
-    if (dist > maxRadius) {
+    if (dist > maxRadius && dist > 0) {
       clampedX = (dx / dist) * maxRadius;
       clampedY = (dy / dist) * maxRadius;
     }
 
     if (knobRef.current) {
-      knobRef.current.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
+      knobRef.current.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0)`;
     }
 
-    const deadzone = 10;
+    const deadzone = Math.max(8, rect.width * 0.12);
     let isUp = false;
     let isDown = false;
     let isLeft = false;
     let isRight = false;
 
     if (dist >= deadzone) {
-      const normX = dx / (dist || 1);
-      const normY = dy / (dist || 1);
-
-      if (normY < -0.38) isUp = true;
-      if (normY > 0.38) isDown = true;
-      if (normX < -0.38) isLeft = true;
-      if (normX > 0.38) isRight = true;
+      const angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+      isUp = angleDeg > -157.5 && angleDeg < -22.5;
+      isDown = angleDeg > 22.5 && angleDeg < 157.5;
+      isLeft = angleDeg < -112.5 || angleDeg > 112.5;
+      isRight = angleDeg > -67.5 && angleDeg < 67.5;
     }
 
-    keysRef.current.up = isUp;
-    keysRef.current.down = isDown;
-    keysRef.current.left = isLeft;
-    keysRef.current.right = isRight;
+    const dirs = { up: isUp, down: isDown, left: isLeft, right: isRight };
+    onAnalogUpdate(dirs);
 
     const prev = activeDirsRef.current;
     if (prev.up !== isUp || prev.down !== isDown || prev.left !== isLeft || prev.right !== isRight) {
-      const next = { up: isUp, down: isDown, left: isLeft, right: isRight };
-      activeDirsRef.current = next;
-      setActiveDirs(next);
+      activeDirsRef.current = dirs;
+      setActiveDirs(dirs);
     }
-  }, [keysRef]);
+  }, [onAnalogUpdate]);
+
+  const handlePointerDown = (e) => {
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+
+    pointerIdRef.current = e.pointerId;
+    isDraggingRef.current = true;
+    setIsDragging(true);
+
+    try {
+      if (e.currentTarget && e.currentTarget.setPointerCapture) {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }
+    } catch (err) {
+      // ignore
+    }
+
+    updateFromCoords(e.clientX, e.clientY);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDraggingRef.current) return;
+    if (pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) return;
+    updateFromCoords(e.clientX, e.clientY);
+  };
+
+  const handlePointerUp = (e) => {
+    if (!isDraggingRef.current) return;
+    if (pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) return;
+
+    try {
+      if (e.currentTarget && e.currentTarget.releasePointerCapture && pointerIdRef.current !== null) {
+        e.currentTarget.releasePointerCapture(pointerIdRef.current);
+      }
+    } catch (err) {
+      // ignore
+    }
+    resetStick();
+  };
 
   useEffect(() => {
-    const handleMove = (e) => {
-      if (!isDraggingRef.current) return;
-
-      let clientX, clientY;
-      if (e.touches) {
-        let matchedTouch = null;
-        for (let i = 0; i < e.touches.length; i++) {
-          if (e.touches[i].identifier === touchIdRef.current) {
-            matchedTouch = e.touches[i];
-            break;
-          }
-        }
-        if (matchedTouch) {
-          clientX = matchedTouch.clientX;
-          clientY = matchedTouch.clientY;
-        } else {
-          return;
-        }
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
+    const handleGlobalEnd = (e) => {
+      if (e && e.pointerId !== undefined && pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) {
+        return;
       }
-
-      if (clientX !== undefined && clientY !== undefined) {
-        updateFromCoords(clientX, clientY);
+      if (isDraggingRef.current) {
+        resetStick();
       }
     };
 
-    const handleEnd = (e) => {
-      if (!isDraggingRef.current) return;
-      if (e.changedTouches && touchIdRef.current !== null) {
-        let touchEnded = false;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-          if (e.changedTouches[i].identifier === touchIdRef.current) {
-            touchEnded = true;
-            break;
-          }
-        }
-        if (!touchEnded) return;
-      }
-      resetStick();
-    };
-
-    window.addEventListener("pointermove", handleMove);
-    window.addEventListener("touchmove", handleMove, { passive: false });
-    window.addEventListener("pointerup", handleEnd);
-    window.addEventListener("pointercancel", handleEnd);
-    window.addEventListener("touchend", handleEnd);
-    window.addEventListener("touchcancel", handleEnd);
+    window.addEventListener("pointerup", handleGlobalEnd);
+    window.addEventListener("pointercancel", handleGlobalEnd);
+    window.addEventListener("blur", handleGlobalEnd);
+    window.addEventListener("visibilitychange", handleGlobalEnd);
 
     return () => {
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("touchmove", handleMove);
-      window.removeEventListener("pointerup", handleEnd);
-      window.removeEventListener("pointercancel", handleEnd);
-      window.removeEventListener("touchend", handleEnd);
-      window.removeEventListener("touchcancel", handleEnd);
+      window.removeEventListener("pointerup", handleGlobalEnd);
+      window.removeEventListener("pointercancel", handleGlobalEnd);
+      window.removeEventListener("blur", handleGlobalEnd);
+      window.removeEventListener("visibilitychange", handleGlobalEnd);
     };
-  }, [resetStick, updateFromCoords]);
-
-  const handleStart = (e) => {
-    let clientX, clientY;
-    if (e.touches && e.touches.length > 0) {
-      const touch = e.touches[e.touches.length - 1];
-      touchIdRef.current = touch.identifier;
-      clientX = touch.clientX;
-      clientY = touch.clientY;
-    } else {
-      touchIdRef.current = e.pointerId ?? "mouse";
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    isDraggingRef.current = true;
-    if (clientX !== undefined && clientY !== undefined) {
-      updateFromCoords(clientX, clientY);
-    }
-  };
+  }, [resetStick]);
 
   return (
     <div className="touch-analog-container">
       <div
         ref={baseRef}
         className="touch-analog-base"
-        onPointerDown={handleStart}
-        onTouchStart={handleStart}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onLostPointerCapture={handlePointerUp}
       >
         <div className={`analog-dir dir-up ${activeDirs.up ? "active" : ""}`}>▲</div>
         <div className={`analog-dir dir-down ${activeDirs.down ? "active" : ""}`}>▼</div>
         <div className={`analog-dir dir-left ${activeDirs.left ? "active" : ""}`}>◀</div>
         <div className={`analog-dir dir-right ${activeDirs.right ? "active" : ""}`}>▶</div>
-        <div ref={knobRef} className="touch-analog-knob" />
+        <div
+          ref={knobRef}
+          className={`touch-analog-knob ${isDragging ? "dragging" : "resetting"}`}
+        />
       </div>
     </div>
   );
@@ -669,7 +656,25 @@ export default function DinoGame() {
   const [selectedSkin, setSelectedSkin] = useState("classic");
   const [achievementToast, setAchievementToast] = useState("");
 
+  const keyboardKeysRef = useRef({ up: false, down: false, left: false, right: false });
+  const mobileButtonKeysRef = useRef({ up: false, down: false, left: false, right: false });
+  const analogKeysRef = useRef({ up: false, down: false, left: false, right: false });
   const keysRef = useRef({ up: false, down: false, left: false, right: false });
+
+  const updateCombinedKeys = useCallback(() => {
+    const kb = keyboardKeysRef.current;
+    const mb = mobileButtonKeysRef.current;
+    const an = analogKeysRef.current;
+    keysRef.current.up = kb.up || mb.up || an.up;
+    keysRef.current.down = kb.down || mb.down || an.down;
+    keysRef.current.left = kb.left || mb.left || an.left;
+    keysRef.current.right = kb.right || mb.right || an.right;
+  }, []);
+
+  const handleAnalogUpdate = useCallback((dirs) => {
+    analogKeysRef.current = dirs;
+    updateCombinedKeys();
+  }, [updateCombinedKeys]);
   const levelMsgTimeoutRef = useRef(null);
   const hitMsgTimeoutRef = useRef(null);
   const badgeIntervalRef = useRef(null);
@@ -1242,6 +1247,10 @@ export default function DinoGame() {
 
   const startGame = () => {
     requestLandscape();
+    keyboardKeysRef.current = { up: false, down: false, left: false, right: false };
+    mobileButtonKeysRef.current = { up: false, down: false, left: false, right: false };
+    analogKeysRef.current = { up: false, down: false, left: false, right: false };
+    keysRef.current = { up: false, down: false, left: false, right: false };
     const s = stateRef.current;
     s.dino = { x: DINO_START.x, y: DINO_START.y, w: DINO_SIZE, h: DINO_SIZE, dir: "right" };
     s.level = 1;
@@ -1408,22 +1417,26 @@ export default function DinoGame() {
         case "ArrowUp":
         case "KeyW":
           e.preventDefault();
-          keysRef.current.up = true;
+          keyboardKeysRef.current.up = true;
+          updateCombinedKeys();
           break;
         case "ArrowDown":
         case "KeyS":
           e.preventDefault();
-          keysRef.current.down = true;
+          keyboardKeysRef.current.down = true;
+          updateCombinedKeys();
           break;
         case "ArrowLeft":
         case "KeyA":
           e.preventDefault();
-          keysRef.current.left = true;
+          keyboardKeysRef.current.left = true;
+          updateCombinedKeys();
           break;
         case "ArrowRight":
         case "KeyD":
           e.preventDefault();
-          keysRef.current.right = true;
+          keyboardKeysRef.current.right = true;
+          updateCombinedKeys();
           break;
         case "KeyR":
         case "KeyF":
@@ -1445,19 +1458,23 @@ export default function DinoGame() {
       switch (e.code) {
         case "ArrowUp":
         case "KeyW":
-          keysRef.current.up = false;
+          keyboardKeysRef.current.up = false;
+          updateCombinedKeys();
           break;
         case "ArrowDown":
         case "KeyS":
-          keysRef.current.down = false;
+          keyboardKeysRef.current.down = false;
+          updateCombinedKeys();
           break;
         case "ArrowLeft":
         case "KeyA":
-          keysRef.current.left = false;
+          keyboardKeysRef.current.left = false;
+          updateCombinedKeys();
           break;
         case "ArrowRight":
         case "KeyD":
-          keysRef.current.right = false;
+          keyboardKeysRef.current.right = false;
+          updateCombinedKeys();
           break;
         default:
           break;
@@ -1469,11 +1486,12 @@ export default function DinoGame() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [started, gameOver, soundEnabled, difficulty, isPaused, upgrades]);
+  }, [started, gameOver, soundEnabled, difficulty, isPaused, upgrades, updateCombinedKeys]);
 
-  const setKey = (key, value) => (e) => {
-    e.preventDefault();
-    keysRef.current[key] = value;
+  const setMobileKey = (key, value) => (e) => {
+    if (e && e.cancelable) e.preventDefault();
+    mobileButtonKeysRef.current[key] = value;
+    updateCombinedKeys();
   };
 
   useEffect(() => {
@@ -1553,15 +1571,23 @@ export default function DinoGame() {
       const effSpeed = (isRampage ? BASE_SPEED * 1.8 : now < s.effects.speedUntil ? BASE_SPEED * 1.6 : BASE_SPEED) * speedUpgradeBonus;
       const isMoving = k.up || k.down || k.left || k.right;
 
-      if (k.up) d.y -= effSpeed;
-      if (k.down) d.y += effSpeed;
-      if (k.left) {
-        d.x -= effSpeed;
-        d.dir = "left";
-      }
-      if (k.right) {
-        d.x += effSpeed;
-        d.dir = "right";
+      let dirX = 0;
+      let dirY = 0;
+      if (k.left) dirX -= 1;
+      if (k.right) dirX += 1;
+      if (k.up) dirY -= 1;
+      if (k.down) dirY += 1;
+
+      if (dirX !== 0 || dirY !== 0) {
+        const len = Math.hypot(dirX, dirY);
+        const normX = dirX / len;
+        const normY = dirY / len;
+
+        d.x += normX * effSpeed;
+        d.y += normY * effSpeed;
+
+        if (dirX < 0) d.dir = "left";
+        else if (dirX > 0) d.dir = "right";
       }
       d.x = Math.max(0, Math.min(CANVAS_W - d.w, d.x));
       d.y = Math.max(0, Math.min(CANVAS_H - d.h, d.y));
@@ -3202,7 +3228,7 @@ export default function DinoGame() {
       {/* CONTROLLER ANALOG & BUTTONS UNTUK PENGGUNA MOBILE */}
       {started && !gameOver && isTouchDevice && (
         <>
-          <TouchAnalog keysRef={keysRef} />
+          <TouchAnalog onAnalogUpdate={handleAnalogUpdate} />
 
           <div className="mobile-action-container">
             {/* ROW SKILLS */}
@@ -3244,10 +3270,10 @@ export default function DinoGame() {
               <button
                 type="button"
                 className="mobile-action-btn mobile-btn-duck"
-                onPointerDown={setKey("down", true)}
-                onPointerUp={setKey("down", false)}
-                onPointerLeave={setKey("down", false)}
-                onPointerCancel={setKey("down", false)}
+                onPointerDown={setMobileKey("down", true)}
+                onPointerUp={setMobileKey("down", false)}
+                onPointerLeave={setMobileKey("down", false)}
+                onPointerCancel={setMobileKey("down", false)}
               >
                 ▼
                 <span className="mobile-btn-label">TUNDUK</span>
@@ -3255,10 +3281,10 @@ export default function DinoGame() {
               <button
                 type="button"
                 className="mobile-action-btn mobile-btn-jump"
-                onPointerDown={setKey("up", true)}
-                onPointerUp={setKey("up", false)}
-                onPointerLeave={setKey("up", false)}
-                onPointerCancel={setKey("up", false)}
+                onPointerDown={setMobileKey("up", true)}
+                onPointerUp={setMobileKey("up", false)}
+                onPointerLeave={setMobileKey("up", false)}
+                onPointerCancel={setMobileKey("up", false)}
               >
                 ▲
                 <span className="mobile-btn-label">LONCAT</span>

@@ -704,8 +704,8 @@
 /* ANALOG JOYSTICK TOUCH (POJOK KIRI BAWAH) */
 .touch-analog-container {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
+  bottom: 75px;
+  left: 25px;
   z-index: 999;
   touch-action: none;
   user-select: none;
@@ -755,7 +755,15 @@
   border: 2.5px solid #ffffff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 14px rgba(179, 136, 255, 0.9);
   pointer-events: none;
-  transition: transform 0.03s linear;
+  will-change: transform;
+}
+
+.touch-analog-knob.dragging {
+  transition: none !important;
+}
+
+.touch-analog-knob.resetting {
+  transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.27) !important;
 }
 
 /* TOMBOL AKSI MOBILE (POJOK KANAN BAWAH) */
@@ -958,8 +966,8 @@
   }
 
   .touch-analog-container {
-    bottom: 8px;
-    left: 8px;
+    bottom: 45px;
+    left: 20px;
   }
 
   .touch-analog-base {
