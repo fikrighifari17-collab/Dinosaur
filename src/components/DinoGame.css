@@ -1199,3 +1199,98 @@
     height: 42px;
   }
 }
+
+/* NEW EXPANSION STYLES */
+.dash-btn {
+  background: linear-gradient(135deg, #00e5ff, #0097a7) !important;
+  border-color: #e0f7fa !important;
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.6) !important;
+}
+
+.announcer-toast-overlay {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffd54f;
+  text-shadow: 0 0 15px #ff6f00, 0 4px 12px rgba(0,0,0,0.8);
+  pointer-events: none;
+  z-index: 18;
+  animation: popAnnouncer 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.27) forwards;
+  white-space: nowrap;
+}
+
+@keyframes popAnnouncer {
+  0% { opacity: 0; transform: translate(-50%, -40%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
+}
+
+.quest-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.quest-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.quest-item-row.done {
+  border-color: #ffd54f;
+  background: rgba(255, 213, 79, 0.12);
+}
+
+.quest-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quest-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff59d;
+}
+
+.quest-desc {
+  font-size: 9px;
+  opacity: 0.8;
+}
+
+.quest-claim-btn {
+  background: linear-gradient(135deg, #ffd54f, #ffb300);
+  border: none;
+  color: #3e2723;
+  font-weight: bold;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s;
+}
+
+.quest-claim-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.quest-claim-btn:disabled {
+  opacity: 0.45;
+  background: #616161;
+  color: #ccc;
+  cursor: not-allowed;
+}

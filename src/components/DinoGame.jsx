@@ -59,6 +59,34 @@ const BG_THEMES = {
   },
 };
 
+const SELECTED_ACCESSORY_KEY = "rex_selected_accessory_v1";
+const UNLOCKED_ACCESSORIES_KEY = "rex_unlocked_accessories_v1";
+const SELECTED_PET_KEY = "rex_selected_pet_v1";
+const UNLOCKED_PETS_KEY = "rex_unlocked_pets_v1";
+const DAILY_QUESTS_KEY = "rex_daily_quests_v1";
+
+const ACCESSORY_ITEMS = {
+  none: { id: "none", name: "Tanpa Aksesori", cost: 0, desc: "Tampilan polos" },
+  crown: { id: "crown", name: "👑 Mahkota Emas", cost: 80, desc: "Mahkota raja dino bertabur permata" },
+  glasses: { id: "glasses", name: "🕶️ Kacamata Thug", cost: 40, desc: "Kacamata hitam gaya retro cool" },
+  viking: { id: "viking", name: "🪓 Helm Viking", cost: 65, desc: "Helm dengan tanduk besi gagah" },
+  headphones: { id: "headphones", name: "🎧 Headphone Neon", cost: 50, desc: "Headphone neon pemutar musik" },
+  halo: { id: "halo", name: "😇 Lingkaran Malaikat", cost: 100, desc: "Aura malaikat suci glowing" },
+};
+
+const PET_ITEMS = {
+  none: { id: "none", name: "Tanpa Pet", cost: 0, desc: "Pet tidak aktif" },
+  ptero: { id: "ptero", name: "🦅 Ptero Collector", cost: 120, desc: "Terbang melayang & menyedot kunang-kunang di sekitarnya" },
+  babyRex: { id: "babyRex", name: "🦖 Baby T-Rex", cost: 150, desc: "Memberi bonus coin +1 tiap 12 detik & aura keberuntungan" },
+  dragon: { id: "dragon", name: "🐉 Mini Dragon", cost: 200, desc: "Menembak bola api kecil pemusnah predator terdekat" },
+};
+
+const DEFAULT_DAILY_QUESTS = [
+  { id: "q1", title: "🌟 Panen Kunang-kunang", desc: "Kumpulkan 15 kunang-kunang", target: 15, current: 0, reward: 40, done: false, claimed: false },
+  { id: "q2", title: "💥 Penguasa Skill", desc: "Gunakan Skill Slam / Roar 5 kali", target: 5, current: 0, reward: 50, done: false, claimed: false },
+  { id: "q3", title: "⚡ Combo Master", desc: "Capai Combo 8x dalam 1 permainan", target: 8, current: 0, reward: 60, done: false, claimed: false },
+];
+
 // --- CONFIG TINGKAT KESULITAN / GAME MODES ---
 const DIFFICULTY_CONFIGS = {
   easy: {
@@ -93,6 +121,28 @@ const DIFFICULTY_CONFIGS = {
     scoreMult: 2.5,
     badgeColor: "#ef5350",
     desc: "Predator kilat & agresif, Bonus Skor 2.5x!",
+  },
+  bossRush: {
+    id: "bossRush",
+    name: "👹 Boss Rush",
+    label: "Boss Rush Mode",
+    speedMult: 1.25,
+    startLives: 2,
+    roarCd: 4000,
+    scoreMult: 3.0,
+    badgeColor: "#e91e63",
+    desc: "Bertarung langsung melawan mini-boss & boss tanpa henti!",
+  },
+  endless: {
+    id: "endless",
+    name: "🎲 Endless",
+    label: "Endless Survival",
+    speedMult: 1.1,
+    startLives: 1,
+    roarCd: 7000,
+    scoreMult: 2.0,
+    badgeColor: "#9c27b0",
+    desc: "Bertahan hidup tanpa batas dengan Event Acak tiap 20-30 detik!",
   },
   zen: {
     id: "zen",
@@ -693,41 +743,23 @@ export default function DinoGame() {
   const [unlockedSkins, setUnlockedSkins] = useState(() =>
     loadJSON(SKIN_KEY, Object.keys(DINO_SKINS))
   );
-  const [selectedSkin, setSelectedSkin] = useState("classic");
-  const [bgTheme, setBgTheme] = useState(() =>
-    loadJSON(BG_THEME_KEY, "nebula")
+  const [selectedAccessory, setSelectedAccessory] = useState(() =>
+    loadJSON(SELECTED_ACCESSORY_KEY, "none")
   );
-  const [achievementToast, setAchievementToast] = useState("");
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(BG_THEME_KEY, JSON.stringify(bgTheme));
-    } catch (_) {}
-  }, [bgTheme]);
-
-  const keyboardKeysRef = useRef({ up: false, down: false, left: false, right: false });
-  const mobileButtonKeysRef = useRef({ up: false, down: false, left: false, right: false });
-  const analogKeysRef = useRef({ up: false, down: false, left: false, right: false });
-  const keysRef = useRef({ up: false, down: false, left: false, right: false });
-
-  const updateCombinedKeys = useCallback(() => {
-    const kb = keyboardKeysRef.current;
-    const mb = mobileButtonKeysRef.current;
-    const an = analogKeysRef.current;
-    keysRef.current.up = kb.up || mb.up || an.up;
-    keysRef.current.down = kb.down || mb.down || an.down;
-    keysRef.current.left = kb.left || mb.left || an.left;
-    keysRef.current.right = kb.right || mb.right || an.right;
-  }, []);
-
-  const handleAnalogUpdate = useCallback((dirs) => {
-    analogKeysRef.current = dirs;
-    updateCombinedKeys();
-  }, [updateCombinedKeys]);
-  const levelMsgTimeoutRef = useRef(null);
-  const hitMsgTimeoutRef = useRef(null);
-  const badgeIntervalRef = useRef(null);
-  const achievementToastTimeoutRef = useRef(null);
+  const [unlockedAccessories, setUnlockedAccessories] = useState(() =>
+    loadJSON(UNLOCKED_ACCESSORIES_KEY, ["none"])
+  );
+  const [selectedPet, setSelectedPet] = useState(() =>
+    loadJSON(SELECTED_PET_KEY, "none")
+  );
+  const [unlockedPets, setUnlockedPets] = useState(() =>
+    loadJSON(UNLOCKED_PETS_KEY, ["none"])
+  );
+  const [dashCdPct, setDashCdPct] = useState(0);
+  const [announcerText, setAnnouncerText] = useState("");
+  const [dailyQuests, setDailyQuests] = useState(() =>
+    loadJSON(DAILY_QUESTS_KEY, DEFAULT_DAILY_QUESTS)
+  );
 
   const stateRef = useRef({
     dino: { x: DINO_START.x, y: DINO_START.y, w: DINO_SIZE, h: DINO_SIZE, dir: "right" },
@@ -742,6 +774,7 @@ export default function DinoGame() {
     stars: [],
     clouds: [],
     shootingStars: [],
+    weatherParticles: [],
     moonPhase: 0,
     collected: 0,
     level: 1,
@@ -750,6 +783,8 @@ export default function DinoGame() {
     invulnerableUntil: 0,
     roarCooldownUntil: 0,
     slamCooldownUntil: 0,
+    dashCooldownUntil: 0,
+    isDashingUntil: 0,
     rampageUntil: 0,
     rampageEnergy: 0,
     roarEffect: null,
@@ -758,6 +793,11 @@ export default function DinoGame() {
     comboCount: 0,
     lastCollectTime: 0,
     lastFireballTime: 0,
+    lastEventTime: 0,
+    shakeTime: 0,
+    shakeIntensity: 0,
+    lastSkillTimes: { slam: 0, roar: 0 },
+    pet: { x: DINO_START.x - 25, y: DINO_START.y - 25, lastAbilityTime: 0 },
     timeLeft: 60,
     isCoinFever: false,
     feverEndTime: 0,
@@ -777,21 +817,86 @@ export default function DinoGame() {
 
   const diffCfg = DIFFICULTY_CONFIGS[difficulty] || DIFFICULTY_CONFIGS.normal;
 
-  const buyUpgrade = (item) => {
-    const curLvl = upgrades[item.id] || 0;
-    if (curLvl >= item.maxLvl) return;
+  const buyAccessory = (item) => {
+    if (unlockedAccessories.includes(item.id)) {
+      setSelectedAccessory(item.id);
+      saveJSON(SELECTED_ACCESSORY_KEY, item.id);
+      showHit(`Aksesori ${item.name} digunakan!`);
+      return;
+    }
     if (coins < item.cost) {
       showHit("Coin tidak cukup!");
       return;
     }
     const newCoins = coins - item.cost;
-    const newUpgrades = { ...upgrades, [item.id]: curLvl + 1 };
+    const newUnlocked = [...unlockedAccessories, item.id];
     setCoins(newCoins);
-    setUpgrades(newUpgrades);
+    setUnlockedAccessories(newUnlocked);
+    setSelectedAccessory(item.id);
     saveJSON(COINS_KEY, newCoins);
-    saveJSON(UPGRADES_KEY, newUpgrades);
+    saveJSON(UNLOCKED_ACCESSORIES_KEY, newUnlocked);
+    saveJSON(SELECTED_ACCESSORY_KEY, item.id);
     playSound("powerup", soundEnabled);
-    showHit(`${item.name} ditingkatkan ke Lv. ${curLvl + 1}!`);
+    showHit(`Aksesori ${item.name} berhasil dibeli!`);
+  };
+
+  const buyPet = (item) => {
+    if (unlockedPets.includes(item.id)) {
+      setSelectedPet(item.id);
+      saveJSON(SELECTED_PET_KEY, item.id);
+      showHit(`Pet ${item.name} dipasang!`);
+      return;
+    }
+    if (coins < item.cost) {
+      showHit("Coin tidak cukup!");
+      return;
+    }
+    const newCoins = coins - item.cost;
+    const newUnlocked = [...unlockedPets, item.id];
+    setCoins(newCoins);
+    setUnlockedPets(newUnlocked);
+    setSelectedPet(item.id);
+    saveJSON(COINS_KEY, newCoins);
+    saveJSON(UNLOCKED_PETS_KEY, newUnlocked);
+    saveJSON(SELECTED_PET_KEY, item.id);
+    playSound("powerup", soundEnabled);
+    showHit(`Pet ${item.name} berhasil dibeli!`);
+  };
+
+  const updateQuestProgress = (questId, amount = 1) => {
+    setDailyQuests((prev) => {
+      const next = prev.map((q) => {
+        if (q.id === questId && !q.done) {
+          const cur = q.current + amount;
+          const isDone = cur >= q.target;
+          if (isDone) showHit(`🏆 MISI SELESAI: ${q.title}! Klaim Hadiah!`);
+          return { ...q, current: cur, done: isDone };
+        }
+        return q;
+      });
+      saveJSON(DAILY_QUESTS_KEY, next);
+      return next;
+    });
+  };
+
+  const claimQuest = (questId) => {
+    setDailyQuests((prev) => {
+      const next = prev.map((q) => {
+        if (q.id === questId && q.done && !q.claimed) {
+          setCoins((c) => {
+            const nc = c + q.reward;
+            saveJSON(COINS_KEY, nc);
+            return nc;
+          });
+          playSound("powerup", soundEnabled);
+          showHit(`🎁 Klaim Hadiah +${q.reward} Coins!`);
+          return { ...q, claimed: true };
+        }
+        return q;
+      });
+      saveJSON(DAILY_QUESTS_KEY, next);
+      return next;
+    });
   };
 
   const isUIObstructed = (x, y) => {
@@ -993,17 +1098,67 @@ export default function DinoGame() {
     }
   };
 
+  const triggerLavaShockwave = () => {
+    const s = stateRef.current;
+    showHit("🔥 LAVA SHOCKWAVE COMBO! Layar Dibersihkan!");
+    playSound("slam", soundEnabled, 0.6);
+    playSound("roar", soundEnabled, 1.4);
+    s.shakeTime = 22;
+    s.shakeIntensity = 16;
+    const cx = s.dino.x + s.dino.w / 2;
+    const cy = s.dino.y + s.dino.h / 2;
+
+    for (let i = 0; i < 45; i++) {
+      spawnParticles(cx, cy, "#ff3d00", 25);
+      spawnParticles(cx, cy, "#ffd54f", 25);
+    }
+    s.predators = s.predators.filter((p) => {
+      spawnParticles(p.x + p.w / 2, p.y + p.h / 2, "#ffd54f", 18);
+      return false;
+    });
+    s.bossFireballs = [];
+    setScore((sc) => sc + 150);
+    updateQuestProgress("q2", 1);
+  };
+
+  const triggerDash = () => {
+    const s = stateRef.current;
+    const now = Date.now();
+    if (!started || gameOver || isPaused) return;
+    if (now < s.dashCooldownUntil) return;
+
+    s.dashCooldownUntil = now + 3000;
+    s.isDashingUntil = now + 350;
+    s.invulnerableUntil = Math.max(s.invulnerableUntil, now + 350);
+    playSound("step", soundEnabled, 2.2);
+
+    const dirMult = s.dino.dir === "left" ? -1 : 1;
+    s.dino.x = Math.max(10, Math.min(CANVAS_W - s.dino.w - 10, s.dino.x + dirMult * 100));
+    spawnDashTrail(s.dino.x - dirMult * 50, s.dino.y, s.dino.x, s.dino.y, "#00e5ff");
+  };
+
   const triggerRoar = () => {
     const s = stateRef.current;
     const now = Date.now();
     if (!started || gameOver || isPaused) return;
     if (now < s.roarCooldownUntil) return;
 
+    const lastSlamTime = s.lastSkillTimes.slam;
+    s.lastSkillTimes.roar = now;
+
+    if (now - lastSlamTime < 1500) {
+      triggerLavaShockwave();
+      return;
+    }
+
     const roarUpgradeBonus = (upgrades.roar || 0) * 1500;
     const actualCd = Math.max(3000, diffCfg.roarCd - roarUpgradeBonus);
     s.roarCooldownUntil = now + actualCd;
     playSound("roar", soundEnabled);
     showHit("📢 AUMAN T-REX! Predator terdorong!");
+    s.shakeTime = 12;
+    s.shakeIntensity = 8;
+    updateQuestProgress("q2", 1);
 
     const cx = s.dino.x + s.dino.w / 2;
     const cy = s.dino.y + s.dino.h / 2;
@@ -1045,9 +1200,20 @@ export default function DinoGame() {
     if (!started || gameOver || isPaused) return;
     if (now < s.slamCooldownUntil) return;
 
+    const lastRoarTime = s.lastSkillTimes.roar;
+    s.lastSkillTimes.slam = now;
+
+    if (now - lastRoarTime < 1500) {
+      triggerLavaShockwave();
+      return;
+    }
+
     s.slamCooldownUntil = now + SLAM_COOLDOWN_MS;
     playSound("slam", soundEnabled);
     showHit("💥 GROUND SLAM! Kaktus sekitar hancur!");
+    s.shakeTime = 16;
+    s.shakeIntensity = 12;
+    updateQuestProgress("q2", 1);
 
     const cx = s.dino.x + s.dino.w / 2;
     const cy = s.dino.y + s.dino.h / 2;
@@ -1476,6 +1642,12 @@ export default function DinoGame() {
           e.preventDefault();
           triggerSlam();
           break;
+        case "ShiftLeft":
+        case "ShiftRight":
+        case "KeyZ":
+          e.preventDefault();
+          triggerDash();
+          break;
         case "ArrowUp":
         case "KeyW":
           e.preventDefault();
@@ -1604,6 +1776,13 @@ export default function DinoGame() {
         setSlamCdPct(Math.min(1, remaining / SLAM_COOLDOWN_MS));
       } else {
         setSlamCdPct(0);
+      }
+
+      if (s.dashCooldownUntil > now) {
+        const remaining = s.dashCooldownUntil - now;
+        setDashCdPct(Math.min(1, remaining / 3000));
+      } else {
+        setDashCdPct(0);
       }
     }, 150);
     return () => clearInterval(badgeIntervalRef.current);
@@ -1958,6 +2137,18 @@ export default function DinoGame() {
               s.comboCount = 1;
             }
             s.lastCollectTime = now;
+            updateQuestProgress("q1", 1);
+
+            if (s.comboCount >= 20) {
+              setAnnouncerText("👑 GIGA REX GOD! 20x");
+            } else if (s.comboCount >= 15) {
+              setAnnouncerText("💥 UNSTOPPABLE! 15x");
+            } else if (s.comboCount >= 10) {
+              setAnnouncerText("🔥 SUPERB! 10x");
+            } else if (s.comboCount >= 5) {
+              setAnnouncerText("⚡ GREAT COMBO! 5x");
+            }
+            if (s.comboCount >= 5) updateQuestProgress("q3", s.comboCount);
 
             const pitchMult = 1.0 + Math.min(0.6, (s.comboCount - 1) * 0.12);
             playSound("collect", soundEnabled, pitchMult);
@@ -2273,6 +2464,13 @@ export default function DinoGame() {
   };
 
   const draw = (ctx, s, now, isMoving, bgTheme) => {
+    ctx.save();
+    if (s.shakeTime > 0) {
+      s.shakeTime--;
+      const shakeX = (Math.random() - 0.5) * s.shakeIntensity;
+      const shakeY = (Math.random() - 0.5) * s.shakeIntensity;
+      ctx.translate(shakeX, shakeY);
+    }
     drawDynamicBackground(ctx, s, now, bgTheme);
     drawMoon(ctx, CANVAS_W - 75, 58, 28, s.moonPhase, s.level, bgTheme, now);
 
@@ -2403,6 +2601,7 @@ export default function DinoGame() {
     else if (now < s.lastHappyUntil || s.portalActive) expression = "happy";
 
     drawTRex(ctx, dx, dy, dw, dh, skin, s.dino.dir, isMoving, now, expression, s.fireflies);
+    drawAccessory(ctx, dx, dy, dw, dh, selectedAccessory, s.dino.dir);
     drawPet(ctx, s.dino, now);
     ctx.restore();
 
@@ -2412,11 +2611,14 @@ export default function DinoGame() {
       ctx.fillStyle = ft.color;
       ctx.font = `bold ${ft.fontSize}px monospace`;
       ctx.textAlign = "center";
+      ctx.shadowColor = "rgba(0,0,0,0.6)";
+      ctx.shadowBlur = 4;
       ctx.fillText(ft.text, ft.x, ft.y);
       ctx.restore();
     });
 
-    drawScreenEdgeGlow(ctx, s, now);
+    drawStatusGlow(ctx, s, now);
+    ctx.restore();
   };
 
   const drawMoon = (ctx, x, y, r, phase, lvl, theme, now) => {
@@ -3104,9 +3306,18 @@ export default function DinoGame() {
       <div className="canvas-container">
         <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} />
 
-        {/* TOMBOL SKILLS FLOATING (E SUPER, Q SLAM, & R ROAR) DI POJOK KANAN BAWAH */}
+        {/* TOMBOL SKILLS FLOATING (E SUPER, Q SLAM, R ROAR, & SHIFT DASH) DI POJOK KANAN BAWAH */}
         {started && !gameOver && (
           <div className="skills-hud-btn-container">
+            <button
+              type="button"
+              className={`skill-hud-btn dash-btn ${dashCdPct > 0 ? "disabled" : ""}`}
+              onClick={triggerDash}
+              disabled={dashCdPct > 0}
+              title="Dodge Dash (Tombol Shift/Z): Menghindar Kilat!"
+            >
+              ⚡ DASH (Shift)
+            </button>
             <button
               type="button"
               className={`skill-hud-btn rampage-btn ${rampageEnergy < 100 ? "disabled" : ""}`}
@@ -3146,6 +3357,12 @@ export default function DinoGame() {
                 />
               )}
             </button>
+          </div>
+        )}
+
+        {announcerText && (
+          <div className="announcer-toast-overlay" onAnimationEnd={() => setAnnouncerText("")}>
+            {announcerText}
           </div>
         )}
 
@@ -3266,37 +3483,110 @@ export default function DinoGame() {
                   className={`tab-btn ${overlayTab === "skin" ? "active" : ""}`}
                   onClick={() => setOverlayTab("skin")}
                 >
-                  🎨 Skin Dino
+                  🎨 Skin
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${overlayTab === "acc" ? "active" : ""}`}
+                  onClick={() => setOverlayTab("acc")}
+                >
+                  🎩 Aksesori
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${overlayTab === "pet" ? "active" : ""}`}
+                  onClick={() => setOverlayTab("pet")}
+                >
+                  🦅 Pet
                 </button>
                 <button
                   type="button"
                   className={`tab-btn ${overlayTab === "bg" ? "active" : ""}`}
                   onClick={() => setOverlayTab("bg")}
                 >
-                  🌌 Background
+                  🌌 Theme
                 </button>
                 <button
                   type="button"
                   className={`tab-btn ${overlayTab === "shop" ? "active" : ""}`}
                   onClick={() => setOverlayTab("shop")}
                 >
-                  🛒 Toko Upgrade
+                  🛒 Toko
                 </button>
                 <button
                   type="button"
-                  className={`tab-btn ${overlayTab === "info" ? "active" : ""}`}
-                  onClick={() => setOverlayTab("info")}
+                  className={`tab-btn ${overlayTab === "quest" ? "active" : ""}`}
+                  onClick={() => setOverlayTab("quest")}
                 >
-                  📜 Cara Main
-                </button>
-                <button
-                  type="button"
-                  className={`tab-btn ${overlayTab === "achieve" ? "active" : ""}`}
-                  onClick={() => setOverlayTab("achieve")}
-                >
-                  🏆 Achievement
+                  📜 Misi
                 </button>
               </div>
+
+              {/* TAB CONTENT: AKSESORI */}
+              {overlayTab === "acc" && (
+                <div className="skin-picker-compact" onClick={(e) => e.stopPropagation()}>
+                  {Object.values(ACCESSORY_ITEMS).map((acc) => {
+                    const unlocked = unlockedAccessories.includes(acc.id);
+                    return (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        className={`skin-chip ${selectedAccessory === acc.id ? "active" : ""}`}
+                        onClick={() => buyAccessory(acc)}
+                        title={acc.desc}
+                      >
+                        <span className="skin-name-compact">
+                          {unlocked ? (selectedAccessory === acc.id ? "✔ " + acc.name : acc.name) : `🟡 ${acc.cost} - ${acc.name}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TAB CONTENT: PET COMPANION */}
+              {overlayTab === "pet" && (
+                <div className="skin-picker-compact" onClick={(e) => e.stopPropagation()}>
+                  {Object.values(PET_ITEMS).map((p) => {
+                    const unlocked = unlockedPets.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={`skin-chip ${selectedPet === p.id ? "active" : ""}`}
+                        onClick={() => buyPet(p)}
+                        title={p.desc}
+                      >
+                        <span className="skin-name-compact">
+                          {unlocked ? (selectedPet === p.id ? "✔ " + p.name : p.name) : `🟡 ${p.cost} - ${p.name}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TAB CONTENT: MISI HARIAN */}
+              {overlayTab === "quest" && (
+                <div className="quest-list-compact" onClick={(e) => e.stopPropagation()}>
+                  {dailyQuests.map((q) => (
+                    <div key={q.id} className={`quest-item-row ${q.done ? "done" : ""}`}>
+                      <div className="quest-info">
+                        <span className="quest-title">{q.title} ({q.current}/{q.target})</span>
+                        <span className="quest-desc">{q.desc}</span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!q.done || q.claimed}
+                        className="quest-claim-btn"
+                        onClick={() => claimQuest(q.id)}
+                      >
+                        {q.claimed ? "✔ Diklaim" : q.done ? `🎁 Klaim +${q.reward}` : `🟡 +${q.reward}`}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* TAB CONTENT: SKIN PICKER */}
               {overlayTab === "skin" && (
