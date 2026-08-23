@@ -1638,8 +1638,10 @@ export default function DinoGame() {
         if (dirX < 0) d.dir = "left";
         else if (dirX > 0) d.dir = "right";
       }
-      d.x = Math.max(0, Math.min(CANVAS_W - d.w, d.x));
-      d.y = Math.max(0, Math.min(CANVAS_H - d.h, d.y));
+      const maxDinoX = CANVAS_W - d.w - 10;
+      const maxDinoY = CANVAS_H - d.h - 22;
+      d.x = Math.max(10, Math.min(maxDinoX, d.x));
+      d.y = Math.max(10, Math.min(maxDinoY, d.y));
 
       if (isMoving) {
         stepTimer++;
@@ -1839,16 +1841,16 @@ export default function DinoGame() {
             const wobbleForce = Math.sin(p.wobble) * 1.8;
             p.x += (dx / dist) * chaseSpeed + perpX * wobbleForce;
             p.y += (dy / dist) * chaseSpeed + perpY * wobbleForce;
-            p.x = Math.max(0, Math.min(CANVAS_W - p.w, p.x));
-            p.y = Math.max(0, Math.min(CANVAS_H - p.h, p.y));
+            p.x = Math.max(10, Math.min(CANVAS_W - p.w - 10, p.x));
+            p.y = Math.max(10, Math.min(CANVAS_H - p.h - 22, p.y));
             return;
           }
           p.x += p.vx;
           p.y += p.vy;
-          if (p.x <= 0 || p.x + p.w >= CANVAS_W) p.vx *= -1;
-          if (p.y <= 0 || p.y + p.h >= CANVAS_H) p.vy *= -1;
-          p.x = Math.max(0, Math.min(CANVAS_W - p.w, p.x));
-          p.y = Math.max(0, Math.min(CANVAS_H - p.h, p.y));
+          if (p.x <= 10 || p.x + p.w >= CANVAS_W - 10) p.vx *= -1;
+          if (p.y <= 10 || p.y + p.h >= CANVAS_H - 22) p.vy *= -1;
+          p.x = Math.max(10, Math.min(CANVAS_W - p.w - 10, p.x));
+          p.y = Math.max(10, Math.min(CANVAS_H - p.h - 22, p.y));
         });
       }
 
