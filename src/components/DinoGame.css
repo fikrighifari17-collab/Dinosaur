@@ -540,6 +540,71 @@
   text-overflow: ellipsis;
 }
 
+/* BACKGROUND THEME PICKER STYLES */
+.bg-picker-compact {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.bg-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  padding: 5px 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.bg-chip:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.bg-chip.active {
+  background: rgba(179, 136, 255, 0.28);
+  border-color: #b388ff;
+  box-shadow: 0 0 10px rgba(179, 136, 255, 0.35);
+}
+
+.bg-swatch-compact {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.bg-chip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.bg-name-compact {
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff59d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bg-desc-compact {
+  font-size: 8.5px;
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .tab-panel-compact {
   background: rgba(0, 0, 0, 0.25);
   border: 1px dashed rgba(255, 255, 255, 0.2);

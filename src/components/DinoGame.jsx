@@ -19,6 +19,46 @@ const COMBO_WINDOW_MS = 2200;
 const SLAM_COOLDOWN_MS = 12000;
 const RAMPAGE_DURATION_MS = 8000;
 
+const BG_THEME_KEY = "rex_night_bg_theme_v1";
+
+const BG_THEMES = {
+  nebula: {
+    id: "nebula",
+    name: "🌌 Night Nebula",
+    label: "Angkasa Malam",
+    desc: "Angkasa ungu bertabur bintang & kabut nebula glowing",
+    previewBg: "linear-gradient(135deg, #1b0a2a, #4a154b)",
+  },
+  sunset: {
+    id: "sunset",
+    name: "🌇 Sunset Desert",
+    label: "Senja Padang Pasir",
+    desc: "Langit senja kemerahan berpasir dengan kehangatan mentari",
+    previewBg: "linear-gradient(135deg, #2d0b1e, #7a1c38)",
+  },
+  cyber: {
+    id: "cyber",
+    name: "🌆 Cyber Neon",
+    label: "Cyberpunk Neon",
+    desc: "Dunia neon futuristik bergaris kover grid dan bintang glowing",
+    previewBg: "linear-gradient(135deg, #051622, #0d3b66)",
+  },
+  aurora: {
+    id: "aurora",
+    name: "🍃 Northern Aurora",
+    label: "Aurora Kutub",
+    desc: "Cahaya aurora hijau teal menawan di langit kutub malam",
+    previewBg: "linear-gradient(135deg, #031d1d, #0d5c52)",
+  },
+  volcano: {
+    id: "volcano",
+    name: "🌋 Lava Volcano",
+    label: "Gunung Berapi Lava",
+    desc: "Langit merah lahar berdebu magma panas dan bulan darah",
+    previewBg: "linear-gradient(135deg, #2b0404, #660f0f)",
+  },
+};
+
 // --- CONFIG TINGKAT KESULITAN / GAME MODES ---
 const DIFFICULTY_CONFIGS = {
   easy: {
@@ -79,11 +119,11 @@ const DIFFICULTY_CONFIGS = {
 };
 
 const LEVEL_CONFIG = [
-  { real: 5, fake: 0, obstacles: 8, predators: 2, predatorSpeed: 2.0 },
-  { real: 6, fake: 0, obstacles: 11, predators: 3, predatorSpeed: 2.3 },
-  { real: 7, fake: 0, obstacles: 14, predators: 4, predatorSpeed: 2.6 },
-  { real: 8, fake: 1, obstacles: 17, predators: 5, predatorSpeed: 2.9 },
-  { real: 9, fake: 2, obstacles: 20, predators: 6, predatorSpeed: 3.2 },
+  { real: 5, fake: 0, obstacles: 8, predators: 2, predatorSpeed: 1.1 },
+  { real: 6, fake: 0, obstacles: 11, predators: 3, predatorSpeed: 1.3 },
+  { real: 7, fake: 0, obstacles: 14, predators: 4, predatorSpeed: 1.5 },
+  { real: 8, fake: 1, obstacles: 17, predators: 5, predatorSpeed: 1.7 },
+  { real: 9, fake: 2, obstacles: 20, predators: 6, predatorSpeed: 1.9 },
 ];
 
 const POWERUP_TYPES = [
@@ -654,7 +694,16 @@ export default function DinoGame() {
     loadJSON(SKIN_KEY, Object.keys(DINO_SKINS))
   );
   const [selectedSkin, setSelectedSkin] = useState("classic");
+  const [bgTheme, setBgTheme] = useState(() =>
+    loadJSON(BG_THEME_KEY, "nebula")
+  );
   const [achievementToast, setAchievementToast] = useState("");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BG_THEME_KEY, JSON.stringify(bgTheme));
+    } catch (_) {}
+  }, [bgTheme]);
 
   const keyboardKeysRef = useRef({ up: false, down: false, left: false, right: false });
   const mobileButtonKeysRef = useRef({ up: false, down: false, left: false, right: false });
@@ -1952,7 +2001,7 @@ export default function DinoGame() {
       }
 
       try {
-        draw(ctx, s, now, isMoving);
+        draw(ctx, s, now, isMoving, bgTheme);
       } catch (err) {
         console.error("Canvas draw error:", err);
       }
@@ -1961,102 +2010,135 @@ export default function DinoGame() {
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [started, gameOver, selectedSkin, soundEnabled, difficulty, isPaused, upgrades]);
+  }, [started, gameOver, selectedSkin, soundEnabled, difficulty, isPaused, upgrades, bgTheme]);
 
-  const drawDynamicBackground = (ctx, s, now) => {
+  const drawDynamicBackground = (ctx, s, now, theme = "nebula") => {
     const lvl = s.level;
 
-    if (lvl === 1) {
+    if (theme === "sunset") {
       const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-      grad.addColorStop(0, "#2b1055");
-      grad.addColorStop(0.5, "#5c2a63");
-      grad.addColorStop(1, "#8e44ad");
+      grad.addColorStop(0, "#2d0b2e");
+      grad.addColorStop(0.4, "#64153b");
+      grad.addColorStop(0.75, "#9e2a2b");
+      grad.addColorStop(1, "#ff6b35");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      ctx.fillStyle = "rgba(40, 15, 70, 0.6)";
+      const sunGlow = ctx.createRadialGradient(CANVAS_W / 2, CANVAS_H - 20, 10, CANVAS_W / 2, CANVAS_H - 20, 220);
+      sunGlow.addColorStop(0, "rgba(255, 215, 0, 0.45)");
+      sunGlow.addColorStop(0.5, "rgba(255, 107, 53, 0.2)");
+      sunGlow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = sunGlow;
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      ctx.fillStyle = "rgba(45, 11, 46, 0.75)";
       ctx.beginPath();
       ctx.moveTo(0, CANVAS_H);
-      ctx.quadraticCurveTo(200, CANVAS_H - 90, 400, CANVAS_H - 40);
-      ctx.quadraticCurveTo(600, CANVAS_H - 100, CANVAS_W, CANVAS_H - 20);
+      ctx.quadraticCurveTo(250, CANVAS_H - 80, 500, CANVAS_H - 40);
+      ctx.quadraticCurveTo(700, CANVAS_H - 90, CANVAS_W, CANVAS_H - 30);
       ctx.lineTo(CANVAS_W, CANVAS_H);
       ctx.fill();
-    } else if (lvl === 2) {
+    } else if (theme === "cyber") {
       const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-      grad.addColorStop(0, "#0d1b2a");
-      grad.addColorStop(0.6, "#1b263b");
-      grad.addColorStop(1, "#415a77");
+      grad.addColorStop(0, "#050b14");
+      grad.addColorStop(0.6, "#0a192f");
+      grad.addColorStop(1, "#172a45");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      const neb = ctx.createRadialGradient(250, 120, 10, 250, 120, 180);
-      neb.addColorStop(0, "rgba(123, 44, 191, 0.35)");
-      neb.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = neb;
-      ctx.beginPath();
-      ctx.arc(250, 120, 180, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (lvl === 3) {
+      ctx.strokeStyle = "rgba(0, 229, 255, 0.18)";
+      ctx.lineWidth = 1;
+      const gridOffset = (now * 0.05) % 20;
+      for (let y = CANVAS_H - 140; y < CANVAS_H; y += 16) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(CANVAS_W, y);
+        ctx.stroke();
+      }
+      for (let x = -gridOffset; x < CANVAS_W; x += 35) {
+        ctx.beginPath();
+        ctx.moveTo(CANVAS_W / 2, CANVAS_H - 140);
+        ctx.lineTo(x, CANVAS_H);
+        ctx.stroke();
+      }
+    } else if (theme === "aurora") {
       const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-      grad.addColorStop(0, "#03071e");
-      grad.addColorStop(0.7, "#0f2027");
-      grad.addColorStop(1, "#203a43");
+      grad.addColorStop(0, "#031726");
+      grad.addColorStop(0.6, "#082a36");
+      grad.addColorStop(1, "#0d414e");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
       ctx.save();
-      const aurGrad = ctx.createLinearGradient(0, 40, 0, 220);
+      const aurGrad = ctx.createLinearGradient(0, 30, 0, 220);
       aurGrad.addColorStop(0, "rgba(0, 230, 118, 0.45)");
       aurGrad.addColorStop(0.5, "rgba(0, 229, 255, 0.25)");
       aurGrad.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = aurGrad;
 
       ctx.beginPath();
-      ctx.moveTo(0, 100);
-      for (let x = 0; x <= CANVAS_W; x += 40) {
-        const y = 80 + Math.sin(x * 0.01 + now * 0.0012) * 35 + Math.cos(x * 0.02) * 15;
+      ctx.moveTo(0, 80);
+      for (let x = 0; x <= CANVAS_W; x += 35) {
+        const y = 70 + Math.sin(x * 0.009 + now * 0.0015) * 40 + Math.cos(x * 0.018 + now * 0.001) * 18;
         ctx.lineTo(x, y);
       }
-      ctx.lineTo(CANVAS_W, 260);
-      ctx.lineTo(0, 260);
+      ctx.lineTo(CANVAS_W, 250);
+      ctx.lineTo(0, 250);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
-    } else if (lvl === 4) {
+    } else if (theme === "volcano") {
       const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-      grad.addColorStop(0, "#200005");
-      grad.addColorStop(0.5, "#4a0e17");
-      grad.addColorStop(1, "#780000");
+      grad.addColorStop(0, "#1f0303");
+      grad.addColorStop(0.5, "#4a0808");
+      grad.addColorStop(1, "#701010");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      ctx.fillStyle = "rgba(20, 2, 5, 0.85)";
+      ctx.fillStyle = "rgba(18, 2, 2, 0.85)";
       ctx.beginPath();
       ctx.moveTo(0, CANVAS_H);
-      ctx.lineTo(80, CANVAS_H - 110);
-      ctx.lineTo(170, CANVAS_H - 50);
-      ctx.lineTo(310, CANVAS_H - 140);
-      ctx.lineTo(480, CANVAS_H - 60);
-      ctx.lineTo(620, CANVAS_H - 120);
+      ctx.lineTo(90, CANVAS_H - 110);
+      ctx.lineTo(180, CANVAS_H - 50);
+      ctx.lineTo(320, CANVAS_H - 140);
+      ctx.lineTo(490, CANVAS_H - 65);
+      ctx.lineTo(640, CANVAS_H - 120);
       ctx.lineTo(CANVAS_W, CANVAS_H - 30);
       ctx.lineTo(CANVAS_W, CANVAS_H);
       ctx.fill();
     } else {
       const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
-      grad.addColorStop(0, "#02010a");
-      grad.addColorStop(0.6, "#08071a");
-      grad.addColorStop(1, "#120c2b");
+      if (lvl === 1) {
+        grad.addColorStop(0, "#2b1055");
+        grad.addColorStop(0.5, "#5c2a63");
+        grad.addColorStop(1, "#8e44ad");
+      } else if (lvl === 2) {
+        grad.addColorStop(0, "#0d1b2a");
+        grad.addColorStop(0.6, "#1b263b");
+        grad.addColorStop(1, "#415a77");
+      } else if (lvl === 3) {
+        grad.addColorStop(0, "#03071e");
+        grad.addColorStop(0.7, "#0f2027");
+        grad.addColorStop(1, "#203a43");
+      } else if (lvl === 4) {
+        grad.addColorStop(0, "#200005");
+        grad.addColorStop(0.5, "#4a0e17");
+        grad.addColorStop(1, "#780000");
+      } else {
+        grad.addColorStop(0, "#02010a");
+        grad.addColorStop(0.6, "#08071a");
+        grad.addColorStop(1, "#120c2b");
+      }
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      ctx.strokeStyle = "rgba(179, 136, 255, 0.15)";
-      ctx.lineWidth = 1;
-      for (let y = CANVAS_H - 100; y < CANVAS_H; y += 15) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(CANVAS_W, y);
-        ctx.stroke();
-      }
+      const neb = ctx.createRadialGradient(300, 130, 10, 300, 130, 200);
+      neb.addColorStop(0, "rgba(179, 136, 255, 0.28)");
+      neb.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = neb;
+      ctx.beginPath();
+      ctx.arc(300, 130, 200, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     s.stars.forEach((st) => {
@@ -2163,9 +2245,9 @@ export default function DinoGame() {
     ctx.restore();
   };
 
-  const draw = (ctx, s, now, isMoving) => {
-    drawDynamicBackground(ctx, s, now);
-    drawMoon(ctx, CANVAS_W - 70, 55, 26, s.moonPhase, s.level);
+  const draw = (ctx, s, now, isMoving, bgTheme) => {
+    drawDynamicBackground(ctx, s, now, bgTheme);
+    drawMoon(ctx, CANVAS_W - 75, 58, 28, s.moonPhase, s.level, bgTheme, now);
 
     s.obstacles.forEach((o) => {
       drawShadow(ctx, o.x, o.y + o.h - 1, o.w, 14, 4);
@@ -2262,6 +2344,7 @@ export default function DinoGame() {
       ctx.restore();
     });
 
+    // DRAW PLAYABLE DINO
     const isRampage = now < s.rampageUntil;
     const dinoScale = isRampage ? 1.8 : 1.0;
     const dw = s.dino.w * dinoScale;
@@ -2309,32 +2392,104 @@ export default function DinoGame() {
     drawScreenEdgeGlow(ctx, s, now);
   };
 
-  const drawMoon = (ctx, x, y, r, phase, lvl) => {
+  const drawMoon = (ctx, x, y, r, phase, lvl, theme, now) => {
     ctx.save();
-    const moonGlow = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
-    const moonColor = lvl === 4 ? "rgba(255, 23, 68, 0.4)" : "rgba(255, 245, 157, 0.35)";
-    moonGlow.addColorStop(0, moonColor);
-    moonGlow.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = moonGlow;
+
+    let halo1 = "rgba(255, 245, 157, 0.4)";
+    let halo2 = "rgba(255, 224, 130, 0.15)";
+    let moon1 = "#fffde7";
+    let moon2 = "#fff59d";
+    let moonShadow = "rgba(220, 190, 90, 0.35)";
+
+    if (lvl === 5 || theme === "volcano") {
+      halo1 = "rgba(255, 23, 68, 0.55)";
+      halo2 = "rgba(215, 0, 64, 0.2)";
+      moon1 = "#ff8a80";
+      moon2 = "#ff1744";
+      moonShadow = "rgba(180, 0, 30, 0.4)";
+    } else if (theme === "cyber") {
+      halo1 = "rgba(0, 229, 255, 0.5)";
+      halo2 = "rgba(0, 184, 212, 0.18)";
+      moon1 = "#e0f7fa";
+      moon2 = "#80deea";
+      moonShadow = "rgba(0, 131, 143, 0.35)";
+    } else if (theme === "aurora") {
+      halo1 = "rgba(105, 240, 174, 0.45)";
+      halo2 = "rgba(29, 233, 182, 0.18)";
+      moon1 = "#e8f5e9";
+      moon2 = "#a5d6a7";
+      moonShadow = "rgba(46, 125, 50, 0.3)";
+    } else if (theme === "sunset") {
+      halo1 = "rgba(255, 183, 77, 0.5)";
+      halo2 = "rgba(255, 152, 0, 0.2)";
+      moon1 = "#fff3e0";
+      moon2 = "#ffe0b2";
+      moonShadow = "rgba(239, 108, 0, 0.35)";
+    }
+
+    // Outer Glow Ring
+    const pulse = Math.sin(now / 450) * 3;
+    const outerGlow = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 2.8 + pulse);
+    outerGlow.addColorStop(0, halo1);
+    outerGlow.addColorStop(0.5, halo2);
+    outerGlow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = outerGlow;
     ctx.beginPath();
-    ctx.arc(x, y, r * 2.2, 0, Math.PI * 2);
+    ctx.arc(x, y, r * 2.8 + pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = lvl === 4 ? "#ff5252" : "#f5f3ce";
+    // 3D Spherical Moon Gradient
+    const moonGrad = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+    moonGrad.addColorStop(0, "#ffffff");
+    moonGrad.addColorStop(0.45, moon1);
+    moonGrad.addColorStop(0.85, moon2);
+    moonGrad.addColorStop(1, moonShadow);
+    ctx.fillStyle = moonGrad;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#0b0e23";
-    ctx.beginPath();
-    if (phase === 1) {
-      ctx.arc(x - r * 0.6, y, r, 0, Math.PI * 2);
-    } else if (phase === 2) {
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-    } else if (phase === 3) {
-      ctx.arc(x + r * 0.6, y, r, 0, Math.PI * 2);
+    // Realistic Moon Craters with Rims
+    const craters = [
+      { cx: -0.32, cy: -0.22, cr: 0.24 },
+      { cx: 0.25, cy: 0.28, cr: 0.22 },
+      { cx: 0.15, cy: -0.35, cr: 0.16 },
+      { cx: -0.38, cy: 0.25, cr: 0.18 },
+      { cx: -0.05, cy: 0.05, cr: 0.28 },
+      { cx: 0.38, cy: -0.08, cr: 0.14 },
+    ];
+
+    craters.forEach(({ cx, cy, cr }) => {
+      const craterX = x + cx * r;
+      const craterY = y + cy * r;
+      const craterR = cr * r;
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      ctx.beginPath();
+      ctx.arc(craterX, craterY, craterR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(craterX - 0.5, craterY - 0.5, craterR, Math.PI * 0.8, Math.PI * 1.8);
+      ctx.stroke();
+    });
+
+    // Phase Masking
+    if (phase > 0) {
+      ctx.fillStyle = "rgba(11, 14, 35, 0.88)";
+      ctx.beginPath();
+      if (phase === 1) {
+        ctx.arc(x - r * 0.65, y, r * 1.05, 0, Math.PI * 2);
+      } else if (phase === 2) {
+        ctx.arc(x - r * 0.35, y, r * 1.1, 0, Math.PI * 2);
+      } else if (phase === 3) {
+        ctx.arc(x + r * 0.65, y, r * 1.05, 0, Math.PI * 2);
+      }
+      ctx.fill();
     }
-    ctx.fill();
+
     ctx.restore();
   };
 
@@ -2996,24 +3151,21 @@ export default function DinoGame() {
                 <span className="hiscore-badge-compact">Tekan <strong>ESC</strong> untuk Lanjut</span>
               </div>
 
-              {/* SKIN PICKER IN PAUSE MENU */}
-              <div className="skin-picker-compact" onClick={(e) => e.stopPropagation()}>
-                {Object.entries(DINO_SKINS).map(([id, skin]) => {
-                  const unlocked = !skin.unlockCondition || unlockedSkins.includes(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      disabled={!unlocked}
-                      className={`skin-chip ${selectedSkin === id ? "active" : ""}`}
-                      onClick={() => unlocked && setSelectedSkin(id)}
-                      title={unlocked ? skin.desc : skin.unlockLabel}
-                    >
-                      <span className="skin-swatch-compact" style={{ background: skin.body, borderColor: skin.dark }} />
-                      <span className="skin-name-compact">{unlocked ? skin.name : "🔒 " + skin.name}</span>
-                    </button>
-                  );
-                })}
+              {/* BACKGROUND THEME PICKER IN PAUSE MENU */}
+              <div className="bg-picker-compact" onClick={(e) => e.stopPropagation()}>
+                {Object.entries(BG_THEMES).map(([id, theme]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`bg-chip ${bgTheme === id ? "active" : ""}`}
+                    onClick={() => setBgTheme(id)}
+                  >
+                    <span className="bg-swatch-compact" style={{ background: theme.previewBg }} />
+                    <div className="bg-chip-info">
+                      <span className="bg-name-compact">{theme.name}</span>
+                    </div>
+                  </button>
+                ))}
               </div>
 
               <div className="pause-btn-rows" onClick={(e) => e.stopPropagation()}>
@@ -3091,6 +3243,13 @@ export default function DinoGame() {
                 </button>
                 <button
                   type="button"
+                  className={`tab-btn ${overlayTab === "bg" ? "active" : ""}`}
+                  onClick={() => setOverlayTab("bg")}
+                >
+                  🌌 Background
+                </button>
+                <button
+                  type="button"
                   className={`tab-btn ${overlayTab === "shop" ? "active" : ""}`}
                   onClick={() => setOverlayTab("shop")}
                 >
@@ -3137,6 +3296,26 @@ export default function DinoGame() {
                       </button>
                     );
                   })}
+                </div>
+              )}
+
+              {/* TAB CONTENT: BACKGROUND PICKER */}
+              {overlayTab === "bg" && (
+                <div className="bg-picker-compact" onClick={(e) => e.stopPropagation()}>
+                  {Object.entries(BG_THEMES).map(([id, theme]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`bg-chip ${bgTheme === id ? "active" : ""}`}
+                      onClick={() => setBgTheme(id)}
+                    >
+                      <span className="bg-swatch-compact" style={{ background: theme.previewBg }} />
+                      <div className="bg-chip-info">
+                        <span className="bg-name-compact">{theme.name}</span>
+                        <span className="bg-desc-compact">{theme.desc}</span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
 
@@ -3262,32 +3441,6 @@ export default function DinoGame() {
                 {roarCdPct > 0 && (
                   <span className="mobile-cd-bar" style={{ height: `${roarCdPct * 100}%` }} />
                 )}
-              </button>
-            </div>
-
-            {/* ROW TOMBOL UTAMA */}
-            <div className="mobile-main-actions-row">
-              <button
-                type="button"
-                className="mobile-action-btn mobile-btn-duck"
-                onPointerDown={setMobileKey("down", true)}
-                onPointerUp={setMobileKey("down", false)}
-                onPointerLeave={setMobileKey("down", false)}
-                onPointerCancel={setMobileKey("down", false)}
-              >
-                ▼
-                <span className="mobile-btn-label">TUNDUK</span>
-              </button>
-              <button
-                type="button"
-                className="mobile-action-btn mobile-btn-jump"
-                onPointerDown={setMobileKey("up", true)}
-                onPointerUp={setMobileKey("up", false)}
-                onPointerLeave={setMobileKey("up", false)}
-                onPointerCancel={setMobileKey("up", false)}
-              >
-                ▲
-                <span className="mobile-btn-label">LONCAT</span>
               </button>
             </div>
           </div>
