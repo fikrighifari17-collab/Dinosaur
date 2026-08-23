@@ -761,6 +761,31 @@ export default function DinoGame() {
     loadJSON(DAILY_QUESTS_KEY, DEFAULT_DAILY_QUESTS)
   );
 
+  const keyboardKeysRef = useRef({ up: false, down: false, left: false, right: false });
+  const mobileButtonKeysRef = useRef({ up: false, down: false, left: false, right: false });
+  const analogKeysRef = useRef({ up: false, down: false, left: false, right: false });
+  const keysRef = useRef({ up: false, down: false, left: false, right: false });
+
+  const updateCombinedKeys = useCallback(() => {
+    const kb = keyboardKeysRef.current;
+    const mb = mobileButtonKeysRef.current;
+    const an = analogKeysRef.current;
+    keysRef.current.up = kb.up || mb.up || an.up;
+    keysRef.current.down = kb.down || mb.down || an.down;
+    keysRef.current.left = kb.left || mb.left || an.left;
+    keysRef.current.right = kb.right || mb.right || an.right;
+  }, []);
+
+  const handleAnalogUpdate = useCallback((dirs) => {
+    analogKeysRef.current = dirs;
+    updateCombinedKeys();
+  }, [updateCombinedKeys]);
+
+  const levelMsgTimeoutRef = useRef(null);
+  const hitMsgTimeoutRef = useRef(null);
+  const badgeIntervalRef = useRef(null);
+  const achievementToastTimeoutRef = useRef(null);
+
   const stateRef = useRef({
     dino: { x: DINO_START.x, y: DINO_START.y, w: DINO_SIZE, h: DINO_SIZE, dir: "right" },
     obstacles: [],
