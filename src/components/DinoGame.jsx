@@ -743,6 +743,18 @@ export default function DinoGame() {
   const [unlockedSkins, setUnlockedSkins] = useState(() =>
     loadJSON(SKIN_KEY, Object.keys(DINO_SKINS))
   );
+  const [selectedSkin, setSelectedSkin] = useState("classic");
+  const [bgTheme, setBgTheme] = useState(() =>
+    loadJSON(BG_THEME_KEY, "nebula")
+  );
+  const [achievementToast, setAchievementToast] = useState("");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BG_THEME_KEY, JSON.stringify(bgTheme));
+    } catch (_) {}
+  }, [bgTheme]);
+
   const [selectedAccessory, setSelectedAccessory] = useState(() =>
     loadJSON(SELECTED_ACCESSORY_KEY, "none")
   );
