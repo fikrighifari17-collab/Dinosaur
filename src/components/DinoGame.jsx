@@ -3497,7 +3497,7 @@ export default function DinoGame() {
                   className={`tab-btn ${overlayTab === "info" ? "active" : ""}`}
                   onClick={() => setOverlayTab("info")}
                 >
-                  📖 Tutorial
+                  Tutorial
                 </button>
               </div>
 
@@ -3634,17 +3634,20 @@ export default function DinoGame() {
                 </div>
               )}
 
-              {/* TAB CONTENT: CARA MAIN / TUTORIAL */}
+              {/* TAB CONTENT: CARA MAIN / TUTORIAL BUAT IRENEEE */}
               {overlayTab === "info" && (
                 <div className="tab-panel-compact" onClick={(e) => e.stopPropagation()}>
+                  <h4 style={{ color: "#ffd54f", margin: "0 0 12px 0", fontSize: "14px", textAlign: "center", fontWeight: "bold" }}>
+                    Tutorial Buat Ireneee yang Mudah Dimengerti
+                  </h4>
                   <p className="compact-info-text">
-                    🎯 <strong>Tujuan Utama:</strong> Kumpulkan semua kunang-kunang di arena untuk membuka <strong>Portal Ungu</strong> ke level berikutnya.<br /><br />
-                    🎮 <strong>Kontrol Gerak:</strong> Gunakan <strong>Panah / WASD</strong> di keyboard. (Di Mobile gunakan Joystick Analog).<br /><br />
-                    ⚡ <strong>Dodge Dash (Shift / Z):</strong> Lakukan meluncur kilat dengan perlindungan kebal sementara (cooldown 3s).<br /><br />
-                    💥 <strong>Ground Slam (Q):</strong> Hancurkan kaktus rintangan di sekitar dino.<br /><br />
-                    📢 <strong>Roar / Auman (R):</strong> Hembuskan gelombang suara untuk mendorong predator menjauh.<br /><br />
-                    🔥 <strong>Super Giga Dino (E):</strong> Setelah energi 100%, aktifkan mode Super untuk memangsa predator!<br /><br />
-                    ⚠️ <strong>Predator & Jebakan:</strong> Hindari predator merah dan kunang-kunang jebakan (kunang merah saat didekati).
+                    • <strong>Tujuan Utama:</strong> Kumpulkan semua kunang-kunang di arena untuk membuka <strong>Portal Ungu</strong> ke level berikutnya.<br /><br />
+                    • <strong>Kontrol Gerak:</strong> Gunakan <strong>Panah / WASD</strong> di keyboard. (Di Mobile gunakan Joystick Analog).<br /><br />
+                    • <strong>Dodge Dash (Shift / Z):</strong> Lakukan meluncur kilat dengan perlindungan kebal sementara (cooldown 3s).<br /><br />
+                    • <strong>Ground Slam (Q):</strong> Hancurkan kaktus rintangan di sekitar dino.<br /><br />
+                    • <strong>Roar / Auman (R):</strong> Hembuskan gelombang suara untuk mendorong predator menjauh.<br /><br />
+                    • <strong>Super Giga Dino (E):</strong> Setelah energi 100%, aktifkan mode Super untuk memangsa predator!<br /><br />
+                    • <strong>Predator & Jebakan:</strong> Hindari predator merah dan kunang-kunang jebakan (kunang merah saat didekati).
                   </p>
                 </div>
               )}
