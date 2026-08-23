@@ -897,29 +897,142 @@
   }
 }
 
+@media (max-width: 768px) {
+  .dino-overlay {
+    padding: 8px 10px;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .overlay-content {
+    margin: auto 0;
+    gap: 6px;
+    max-height: 100%;
+  }
+}
+
 @media (max-width: 600px) {
+  .canvas-container {
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .canvas-container canvas {
+    min-height: 180px;
+    object-fit: cover;
+  }
+
   .dino-header-bar {
-    padding: 3px 5px;
-    gap: 3px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 5px 6px;
+    gap: 4px;
   }
+
   .hud-card {
-    padding: 1px 4px;
-    min-width: unset;
+    flex: 1 1 calc(25% - 4px);
+    min-width: 44px;
+    padding: 2px 4px;
+    box-sizing: border-box;
   }
+
   .hud-label {
-    font-size: 7px;
+    font-size: 7.5px;
   }
+
   .hud-val {
+    font-size: 9.5px;
+  }
+
+  .sound-toggle-btn,
+  .settings-toggle-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .difficulty-picker-compact {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 4px 6px;
+    gap: 4px;
+  }
+
+  .diff-picker-label {
+    width: 100%;
+    text-align: center;
     font-size: 9px;
   }
-  .skin-picker-compact {
-    grid-template-columns: 1fr 1fr;
-  }
-  .shop-grid-compact {
-    grid-template-columns: 1fr;
-  }
+
   .diff-btn-group {
     flex-wrap: wrap;
+    width: 100%;
+    gap: 3px;
+  }
+
+  .diff-btn {
+    flex: 1 1 calc(33% - 4px);
+    padding: 4px 2px;
+    font-size: 9px;
+    text-align: center;
+  }
+
+  .overlay-tabs {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+  }
+
+  .skin-picker-compact {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    max-height: 130px;
+    overflow-y: auto;
+  }
+
+  .skin-chip {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+
+  .skin-name-compact {
+    font-size: 10px;
+  }
+
+  .shop-grid-compact {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    max-height: 130px;
+    overflow-y: auto;
+  }
+
+  .overlay-start-box {
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100%;
+  }
+
+  .start-play-btn,
+  .fever-btn {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 11px;
+    box-sizing: border-box;
+  }
+
+  .overlay-title-compact {
+    font-size: 15px;
+  }
+
+  .hiscore-badge-compact {
+    font-size: 10px;
   }
 }
 
@@ -932,6 +1045,11 @@
     justify-content: flex-start;
   }
 
+  .canvas-container {
+    min-height: unset;
+    border-radius: 8px;
+  }
+
   .dino-header-bar {
     padding: 2px 6px;
     border-radius: 6px;
@@ -940,6 +1058,7 @@
   }
 
   .hud-card {
+    flex: unset;
     padding: 1px 3px;
     border-radius: 4px;
   }
@@ -950,10 +1069,6 @@
 
   .hud-val {
     font-size: 8.5px;
-  }
-
-  .canvas-container {
-    border-radius: 8px;
   }
 
   .canvas-container canvas {

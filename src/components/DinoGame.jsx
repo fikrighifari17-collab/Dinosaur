@@ -2835,8 +2835,8 @@ export default function DinoGame() {
           <div className="portrait-prompt-content">
             <span className="rotate-icon">🔄</span>
             <div className="portrait-prompt-text">
-              <strong>Mode Landscape Disarankan!</strong>
-              <span>Putar HP Anda ke mode mendatar (landscape) untuk layar penuh.</span>
+              <strong>Mode Landscape & Fullscreen Disarankan!</strong>
+              <span>Putar HP Anda ke mode mendatar (landscape) dan tekan tombol <strong>📱 Fullscreen</strong> di sebelah kanan untuk layar penuh.</span>
             </div>
             <button type="button" className="rotate-lock-btn" onClick={requestLandscape}>
               📱 Fullscreen
